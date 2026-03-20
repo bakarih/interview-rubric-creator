@@ -26,23 +26,23 @@ export default function RubricView({ rubric }: RubricViewProps) {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+      <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">{rubric.role}</h2>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{rubric.role}</h2>
             <div className="mt-2 flex flex-wrap items-center gap-2">
-              <span className="inline-flex items-center rounded-full bg-purple-100 px-3 py-1 text-sm font-medium text-purple-800">
+              <span className="inline-flex items-center rounded-full bg-purple-100 dark:bg-purple-900 px-3 py-1 text-sm font-medium text-purple-800 dark:text-purple-200">
                 {toTitleCase(rubric.level)}
               </span>
-              <span className="inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-sm font-medium text-gray-700">
+              <span className="inline-flex items-center rounded-full bg-gray-100 dark:bg-gray-800 px-3 py-1 text-sm font-medium text-gray-700 dark:text-gray-300">
                 {rubric.signals.length} signal{rubric.signals.length !== 1 ? 's' : ''}
               </span>
-              <span className="inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-sm font-medium text-gray-700">
+              <span className="inline-flex items-center rounded-full bg-gray-100 dark:bg-gray-800 px-3 py-1 text-sm font-medium text-gray-700 dark:text-gray-300">
                 Total weight: {totalWeight}
               </span>
             </div>
           </div>
-          <p className="text-sm text-gray-500">Created {createdDate}</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Created {createdDate}</p>
         </div>
       </div>
 

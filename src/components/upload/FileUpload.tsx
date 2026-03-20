@@ -55,8 +55,8 @@ export default function FileUpload({ onFile, disabled }: FileUploadProps) {
       className={[
         'flex flex-col items-center justify-center rounded-xl border-2 border-dashed p-10 cursor-pointer transition-colors',
         isDragging
-          ? 'border-blue-500 bg-blue-50'
-          : 'border-gray-300 bg-gray-50 hover:border-gray-400 hover:bg-gray-100',
+          ? 'border-blue-500 bg-blue-50 dark:bg-blue-950'
+          : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 hover:border-gray-400 dark:hover:border-gray-500 hover:bg-gray-100 dark:hover:bg-gray-750',
         disabled ? 'opacity-50 cursor-not-allowed' : '',
       ]
         .filter(Boolean)
@@ -71,7 +71,7 @@ export default function FileUpload({ onFile, disabled }: FileUploadProps) {
         disabled={disabled}
       />
       <svg
-        className="mb-3 h-10 w-10 text-gray-400"
+        className="mb-3 h-10 w-10 text-gray-400 dark:text-gray-500"
         stroke="currentColor"
         fill="none"
         viewBox="0 0 48 48"
@@ -85,13 +85,13 @@ export default function FileUpload({ onFile, disabled }: FileUploadProps) {
         />
       </svg>
       {selectedFile ? (
-        <p className="text-sm font-medium text-blue-700">{selectedFile}</p>
+        <p className="text-sm font-medium text-blue-700 dark:text-blue-400">{selectedFile}</p>
       ) : (
         <>
-          <p className="text-sm font-medium text-gray-700">
+          <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
             {isDragging ? 'Drop your file here' : 'Drag & drop or click to upload'}
           </p>
-          <p className="mt-1 text-xs text-gray-500">Accepted formats: PDF, DOCX, TXT (max 5 MB)</p>
+          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Accepted formats: PDF, DOCX, TXT (max 5 MB)</p>
         </>
       )}
     </div>

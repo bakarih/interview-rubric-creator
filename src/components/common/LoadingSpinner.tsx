@@ -9,7 +9,7 @@ export default function LoadingSpinner({ message }: LoadingSpinnerProps) {
     <div className="flex flex-col items-center justify-center gap-4 py-16">
       <div className="relative h-12 w-12">
         <div
-          className="absolute inset-0 rounded-full border-4 border-gray-200"
+          className="absolute inset-0 rounded-full border-4 border-gray-200 dark:border-gray-700"
           aria-hidden="true"
         />
         <div
@@ -18,7 +18,7 @@ export default function LoadingSpinner({ message }: LoadingSpinnerProps) {
         />
       </div>
       {message && (
-        <p className="text-sm font-medium text-gray-600">{message}</p>
+        <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{message}</p>
       )}
     </div>
   );
