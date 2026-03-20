@@ -1,65 +1,239 @@
-import Image from "next/image";
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import FileUpload from '@/components/upload/FileUpload';
+import TextInput from '@/components/upload/TextInput';
+import LoadingSpinner from '@/components/common/LoadingSpinner';
+import ErrorMessage from '@/components/common/ErrorMessage';
+import RubricView from '@/components/rubric/RubricView';
+import ExportButtons from '@/components/export/ExportButtons';
+import { Rubric, JobDescription } from '@/types';
+
+type FlowState = 'input' | 'loading' | 'result' | 'error';
+type TabId = 'upload' | 'paste';
+
+const STATUS_MESSAGES = [
+  'Parsing document...',
+  'Extracting signals...',
+  'Generating rubric...',
+];
 
 export default function Home() {
-  return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+  const router = useRouter();
+  const [flow, setFlow] = useState<FlowState>('input');
+  const [activeTab, setActiveTab] = useState<TabId>('upload');
+  const [pastedText, setPastedText] = useState('');
+  const [statusIndex, setStatusIndex] = useState(0);
+  const [rubric, setRubric] = useState<Rubric | null>(null);
+  const [errorMessage, setErrorMessage] = useState('');
+
+  // Compute before any conditional returns so TypeScript doesn't narrow flow
+  const isLoading = (flow as string) === 'loading';
+
+  // Cycle through status messages while loading
+  useEffect(() => {
+    if (flow !== 'loading') return;
+    const interval = setInterval(() => {
+      setStatusIndex((prev) => (prev + 1) % STATUS_MESSAGES.length);
+    }, 2500);
+    return () => clearInterval(interval);
+  }, [flow]);
+
+  async function runPipeline(text: string) {
+    setFlow('loading');
+    setStatusIndex(0);
+
+    try {
+      // Step 1: Extract
+      const extractRes = await fetch('/api/extract', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text }),
+      });
+
+      if (!extractRes.ok) {
+        const data = await extractRes.json().catch(() => ({}));
+        throw new Error((data as { error?: string }).error ?? 'Extraction failed');
+      }
+
+      const jd: JobDescription & { signals?: unknown[] } = await extractRes.json();
+
+      // Step 2: Generate
+      const generateRes = await fetch('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          role: jd.role,
+          level: jd.level,
+          signals: jd.signals ?? [],
+        }),
+      });
+
+      if (!generateRes.ok) {
+        const data = await generateRes.json().catch(() => ({}));
+        throw new Error((data as { error?: string }).error ?? 'Generation failed');
+      }
+
+      const generatedRubric: Rubric = await generateRes.json();
+
+      // Save to localStorage
+      const stored = JSON.parse(localStorage.getItem('rubrics') ?? '{}') as Record<string, Rubric>;
+      stored[generatedRubric.id] = generatedRubric;
+      localStorage.setItem('rubrics', JSON.stringify(stored));
+
+      setRubric(generatedRubric);
+      setFlow('result');
+      router.push(`/rubric/${generatedRubric.id}`);
+    } catch (err) {
+      setErrorMessage(err instanceof Error ? err.message : 'An unexpected error occurred');
+      setFlow('error');
+    }
+  }
+
+  async function handleFile(file: File) {
+    setFlow('loading');
+    setStatusIndex(0);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const parseRes = await fetch('/api/parse', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!parseRes.ok) {
+        const data = await parseRes.json().catch(() => ({}));
+        throw new Error((data as { error?: string }).error ?? 'File parsing failed');
+      }
+
+      const { text } = await parseRes.json() as { text: string };
+      await runPipeline(text);
+    } catch (err) {
+      setErrorMessage(err instanceof Error ? err.message : 'An unexpected error occurred');
+      setFlow('error');
+    }
+  }
+
+  async function handleTextSubmit() {
+    if (pastedText.trim().length < 100) {
+      setErrorMessage('Job description must be at least 100 characters.');
+      setFlow('error');
+      return;
+    }
+    await runPipeline(pastedText);
+  }
+
+  function handleReset() {
+    setFlow('input');
+    setRubric(null);
+    setErrorMessage('');
+    setPastedText('');
+    setActiveTab('upload');
+    router.push('/');
+  }
+
+  if (flow === 'loading') {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center bg-gray-50 px-4">
+        <div className="w-full max-w-md rounded-2xl bg-white p-10 shadow-sm border border-gray-200 text-center">
+          <LoadingSpinner message={STATUS_MESSAGES[statusIndex]} />
         </div>
       </main>
-    </div>
+    );
+  }
+
+  if (flow === 'result' && rubric) {
+    return (
+      <main className="min-h-screen bg-gray-50 px-4 py-10">
+        <div className="mx-auto max-w-3xl space-y-6">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <h1 className="text-xl font-bold text-gray-900">Interview Rubric</h1>
+            <div className="flex flex-wrap items-center gap-3">
+              <ExportButtons rubric={rubric} />
+              <button
+                onClick={handleReset}
+                className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors"
+              >
+                Start Over
+              </button>
+            </div>
+          </div>
+          <RubricView rubric={rubric} />
+        </div>
+      </main>
+    );
+  }
+
+  if (flow === 'error') {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center bg-gray-50 px-4">
+        <div className="w-full max-w-md space-y-4">
+          <ErrorMessage message={errorMessage} onRetry={handleReset} />
+        </div>
+      </main>
+    );
+  }
+
+  // Input state
+  return (
+    <main className="flex min-h-screen flex-col items-center justify-center bg-gray-50 px-4 py-12">
+      <div className="w-full max-w-xl space-y-6">
+        {/* Hero */}
+        <div className="text-center">
+          <h1 className="text-3xl font-bold tracking-tight text-gray-900">
+            Interview Rubric Creator
+          </h1>
+          <p className="mt-2 text-gray-600">
+            Transform job descriptions into structured interview rubrics with AI
+          </p>
+        </div>
+
+        {/* Card */}
+        <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+          {/* Tabs */}
+          <div className="mb-6 flex rounded-lg border border-gray-200 p-1 bg-gray-50">
+            {(['upload', 'paste'] as TabId[]).map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={[
+                  'flex-1 rounded-md py-2 text-sm font-medium transition-colors',
+                  activeTab === tab
+                    ? 'bg-white shadow-sm text-gray-900'
+                    : 'text-gray-500 hover:text-gray-700',
+                ].join(' ')}
+              >
+                {tab === 'upload' ? 'Upload File' : 'Paste Text'}
+              </button>
+            ))}
+          </div>
+
+          {/* Tab content */}
+          {activeTab === 'upload' ? (
+            <div className="space-y-4">
+              <FileUpload onFile={handleFile} disabled={isLoading} />
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <TextInput
+                value={pastedText}
+                onChange={setPastedText}
+                disabled={isLoading}
+              />
+              <button
+                onClick={handleTextSubmit}
+                disabled={pastedText.trim().length < 100 || isLoading}
+                className="w-full rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                Generate Rubric
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </main>
   );
 }
