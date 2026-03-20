@@ -3,8 +3,6 @@
 // local file paths and package names without special conditions on Node 16.
 // This resolver falls back to require.resolve when the default fails.
 
-const path = require('path');
-
 module.exports = (request, options) => {
   try {
     return options.defaultResolver(request, options);

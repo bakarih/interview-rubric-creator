@@ -1,5 +1,3 @@
-const path = require('path');
-
 /** @type {import('jest').Config} */
 const config = {
   testEnvironment: 'node',
