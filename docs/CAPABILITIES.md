@@ -26,9 +26,9 @@ From the extracted signals, Claude generates a complete interview rubric where e
 - **Interview questions** — 2–3 tailored behavioral or situational questions (capped at 5 per signal)
 
 ### Export
-- **PDF** — Formatted A4 document with color-coded criteria tables (green for exceeds, blue for meets, orange for below), sorted by signal weight with proper accessibility support
-- **DOCX** — Structured Word document with headings, color-coded tables, and formatting, compatible with Google Docs
-- **Dynamic filename** — Exports use fixed names (rubric.pdf, rubric.docx)
+- **PDF** — Formatted A4 document with proper table structure, color-coded criteria labels (green for exceeds, blue for meets, orange for below), numbered signals sorted by weight, and comprehensive accessibility support
+- **DOCX** — Structured Word document with proper heading hierarchy, color-coded table cells with background shading, borderless tables for clean formatting, and full Google Docs compatibility
+- **Fixed filenames** — Exports use standardized names (rubric.pdf, rubric.docx)
 
 ### User Experience
 - **Dark and light mode** — Toggle with system preference detection, persisted across sessions
@@ -36,28 +36,28 @@ From the extracted signals, Claude generates a complete interview rubric where e
 - **Keyboard navigation** — Full keyboard support throughout the interface including skip-to-content navigation
 - **Loading states** — Rotating status messages during AI processing ("Parsing document...", "Extracting signals...", "Generating rubric...")
 - **Error handling** — Clear error messages with retry functionality
-- **URL-based navigation** — Direct links to individual rubrics (`/rubric/[id]`) with shareable URLs
+- **URL-based navigation** — Direct links to individual rubrics (`/rubric/[id]`) with shareable URLs and proper state management
 
 ### Accessibility (WCAG 2.1 AA)
 - Skip-to-content navigation link
 - Proper heading hierarchy and semantic landmarks
-- ARIA labels on all interactive elements
-- Focus management on state changes
-- Screen reader compatible tables and form elements
-- Tabbed interface with proper ARIA attributes
+- ARIA labels on all interactive elements with comprehensive role and state management
+- Focus management on state changes with programmatic focus control
+- Screen reader compatible tables with proper captions and scope attributes
+- Tabbed interface with full ARIA tablist implementation
 
 ### Feedback System
-- **Built-in feedback widget** — Fixed-position feedback button with menu options for sharing feedback, reporting bugs, suggesting features, or contributing code
-- **Direct GitHub integration** — Links to repository issue templates for structured feedback
+- **Built-in feedback widget** — Fixed-position feedback button with expandable menu for sharing feedback, reporting bugs, suggesting features, or contributing code
+- **Direct GitHub integration** — Links to repository issue templates for structured feedback with specific templates for each feedback type
 
 ---
 
 ## AI Model Capabilities
 
-The application uses **Claude Sonnet 4** (`claude-sonnet-4-20250514`) for both extraction and generation.
+The application uses **Claude Sonnet 4** (`claude-sonnet-4-20250514`) for both extraction and generation with a two-step API process.
 
 ### What the Model Does Well
-- **Structured output** — Reliably produces valid JSON matching the expected schema
+- **Structured output** — Reliably produces valid JSON matching the expected schema with automatic markdown fence stripping
 - **Signal identification** — Accurately identifies the most important competencies from a job description
 - **Criteria writing** — Generates specific, observable criteria that distinguish between performance levels
 - **Question generation** — Creates relevant behavioral and situational questions tied to each signal
@@ -92,7 +92,7 @@ The application uses **Claude Sonnet 4** (`claude-sonnet-4-20250514`) for both e
 - **Modality suggestions** — The suggested assessment format (pair_programming, system_design, etc.) is a recommendation. Teams should adapt based on their interview process and constraints.
 - **No organizational context** — The model has no knowledge of your company's culture, existing team composition, or internal expectations. Rubrics reflect only what's in the job description.
 - **Maximum 15 signals** — Rubrics are capped at 15 signals to keep interviews focused and practical.
-- **Fixed token limits** — Rubric generation uses a maximum of 8,192 tokens, which may truncate very detailed rubrics.
+- **Token limits** — Rubric generation uses a maximum of 8,192 tokens for generation, which may truncate very detailed rubrics.
 
 ### Data and Privacy
 - **No persistence** — Rubrics are stored only in the browser's localStorage. Clearing browser data deletes all rubrics permanently. There is no cloud backup or sync.
@@ -102,7 +102,8 @@ The application uses **Claude Sonnet 4** (`claude-sonnet-4-20250514`) for both e
 - **Job descriptions are sent to Anthropic** — The full text of uploaded job descriptions is sent to the Anthropic API for processing. See [Anthropic's data policy](https://www.anthropic.com/policies) for how API inputs are handled.
 
 ### Export
-- **PDF styling** — The PDF export uses a fixed A4 layout. Very long signal names or criteria text may wrap awkwardly.
+- **PDF styling** — The PDF export uses a fixed A4 layout with React PDF rendering. Very long signal names or criteria text may wrap awkwardly.
+- **DOCX formatting** — Uses docx library with borderless tables and color-coded cell backgrounds. Complex formatting may not render identically across all Word processors.
 - **No Google Docs integration** — DOCX files can be opened in Google Docs, but there is no direct Google Docs API integration.
 - **No edit-and-re-export** — Rubrics cannot be edited in the browser and re-exported. To make changes, you would need to edit the exported document directly.
 - **Fixed filename format** — Exported files use generic names (rubric.pdf, rubric.docx) rather than role-specific names.

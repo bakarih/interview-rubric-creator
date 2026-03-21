@@ -184,7 +184,7 @@ Transforms extracted signals into a complete interview rubric.
 Exports rubric as PDF or DOCX file.
 
 **Request**: `{ rubric: Rubric, format: 'pdf' | 'docx' }`  
-**Response**: Binary file download  
+**Response**: Binary file download with appropriate headers  
 **Libraries**: @react-pdf/renderer, docx
 
 ## Environment Variables

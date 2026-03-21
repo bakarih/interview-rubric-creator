@@ -110,17 +110,19 @@ The AI work is split into two calls rather than one:
 
 This separation improves reliability. Each call has a narrower scope, making Claude's output more consistent and easier to validate.
 
-### React-Based Export System with Native Document Rendering
+### React-Based Export System with Dynamic Document Generation
 The export system builds documents using React components and native rendering libraries:
 - **PDF**: @react-pdf/renderer with React.createElement for dynamic component generation
-- **DOCX**: docx library with structured tables, colored headers, and semantic shading
+- **DOCX**: docx library with Table/TableRow/TableCell components for structured layouts
 
 Both formats include:
 - Weighted signal ranking (sorted by importance)
 - Color-coded criteria tables (exceeds/meets/below with semantic colors)
-- Suggested questions per signal  
+- Suggested questions per signal
 - Assessment modality indicators
 - Professional styling with consistent spacing and typography
+
+Documents are generated server-side and returned as binary downloads with appropriate Content-Type headers.
 
 ### Geist Font System
 The application uses Next.js Geist fonts (sans and mono variants) for consistent typography across all components and exported documents.
