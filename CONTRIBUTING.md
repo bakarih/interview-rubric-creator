@@ -23,10 +23,10 @@ Have an idea for how this could be better? We're all ears.
 Want to get your hands dirty? Here's how:
 
 1. Fork the repo
-2. Create a feature branch (`git checkout -b feature/your-idea`)
+2. Create a feature branch off `main`
 3. Make your changes
 4. Run tests and linting
-5. Open a PR with a clear description
+5. Open a PR targeting `main` with a clear description
 
 #### Tech Stack
 - Next.js 16 (App Router)
@@ -50,6 +50,56 @@ npm test              # Unit and integration tests
 npm run test:coverage # With coverage (100% enforced)
 npm run lint          # ESLint
 ```
+
+#### Branching and Merging
+
+This project uses a simple trunk-based workflow:
+
+```
+main (production)
+ ├── feature/add-rubric-editing     ← new features
+ ├── fix/pdf-export-wrapping        ← bug fixes
+ └── docs/update-api-reference      ← documentation
+```
+
+**Branch naming conventions:**
+- `feature/<description>` — new functionality
+- `fix/<description>` — bug fixes
+- `docs/<description>` — documentation changes
+- `refactor/<description>` — code improvements with no behavior change
+
+**Workflow:**
+
+```bash
+# 1. Fork and clone
+git clone https://github.com/<your-username>/interview-rubric-creator.git
+cd interview-rubric-creator
+
+# 2. Create a branch from main
+git checkout -b feature/your-idea
+
+# 3. Make changes, commit with clear messages
+git add .
+git commit -m "feat: add rubric editing support"
+
+# 4. Push to your fork
+git push origin feature/your-idea
+
+# 5. Open a PR targeting main
+```
+
+**Commit message format:**
+- `feat:` — new feature
+- `fix:` — bug fix
+- `docs:` — documentation only
+- `refactor:` — code change that doesn't fix a bug or add a feature
+- `test:` — adding or updating tests
+
+**Merging:**
+- All PRs are merged into `main` via squash merge
+- `main` auto-deploys to production — every merge goes live
+- CI must pass (lint, tests, build) before merging
+- At least one review is recommended before merging
 
 #### PR Guidelines
 - Keep PRs focused — one feature or fix per PR
