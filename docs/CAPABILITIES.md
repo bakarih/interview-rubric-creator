@@ -23,7 +23,7 @@ From the extracted signals, Claude generates a complete interview rubric where e
 - **Weight (1–10)** — Relative importance for the hiring decision
 - **Three-tier criteria** — Specific, observable descriptions for exceeds / meets / below expectations
 - **Assessment modality** — The recommended interview format: pair_programming, system_design, code_review, behavioral, take_home, technical_discussion, presentation, or case_study
-- **Interview questions** — 2–3 tailored behavioral or situational questions
+- **Interview questions** — 2–3 tailored behavioral or situational questions (capped at 5 per signal)
 
 ### Export
 - **PDF** — Formatted document with color-coded criteria tables (green for exceeds, blue for meets, orange for below), sorted by signal weight with proper accessibility support
@@ -44,6 +44,10 @@ From the extracted signals, Claude generates a complete interview rubric where e
 - Focus management on state changes
 - Screen reader compatible tables and form elements
 - Tabbed interface with proper ARIA attributes
+
+### Feedback System
+- **Built-in feedback widget** — Fixed-position feedback button with menu options for sharing feedback, reporting bugs, suggesting features, or contributing code
+- **Direct GitHub integration** — Links to repository issue templates for structured feedback
 
 ---
 
@@ -87,6 +91,7 @@ The application uses **Claude Sonnet 4** (`claude-sonnet-4-20250514`) for both e
 - **Modality suggestions** — The suggested assessment format (pair_programming, system_design, etc.) is a recommendation. Teams should adapt based on their interview process and constraints.
 - **No organizational context** — The model has no knowledge of your company's culture, existing team composition, or internal expectations. Rubrics reflect only what's in the job description.
 - **Maximum 15 signals** — Rubrics are capped at 15 signals to keep interviews focused and practical.
+- **Fixed token limits** — Rubric generation uses a maximum of 8,192 tokens, which may truncate very detailed rubrics.
 
 ### Data and Privacy
 - **No persistence** — Rubrics are stored only in the browser's localStorage. Clearing browser data deletes all rubrics permanently. There is no cloud backup or sync.
@@ -99,6 +104,7 @@ The application uses **Claude Sonnet 4** (`claude-sonnet-4-20250514`) for both e
 - **PDF styling** — The PDF export uses a fixed layout optimized for A4 format. Very long signal names or criteria text may wrap awkwardly.
 - **No Google Docs integration** — DOCX files can be opened in Google Docs, but there is no direct Google Docs API integration.
 - **No edit-and-re-export** — Rubrics cannot be edited in the browser and re-exported. To make changes, you would need to edit the exported document directly.
+- **Fixed filename format** — Exported files use generic names (rubric.pdf, rubric.docx) rather than role-specific names.
 
 ### Cost
 - **API usage** — Each job description processed makes two API calls to Claude (extract + generate). At current Sonnet 4 pricing, expect roughly $0.01–0.05 per rubric depending on JD length.

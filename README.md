@@ -103,6 +103,7 @@ npm start
 | PDF Export | [@react-pdf/renderer](https://react-pdf.org/) | PDF document generation with React components |
 | DOCX Export | [docx](https://docx.js.org/) | Word document generation |
 | File Parsing | [pdf-parse](https://www.npmjs.com/package/pdf-parse), [mammoth](https://www.npmjs.com/package/mammoth) | PDF and DOCX text extraction |
+| IDs | [uuid](https://www.npmjs.com/package/uuid) | Unique identifier generation |
 | Testing | [Jest](https://jestjs.io/), [Testing Library](https://testing-library.com/), [Playwright](https://playwright.dev/) | Unit, integration, and E2E testing |
 | Hosting | [AWS App Runner](https://aws.amazon.com/apprunner/) | Production deployment with auto-deploy from GitHub |
 
@@ -112,6 +113,7 @@ npm start
 - **Weighted rubric generation** — Each signal receives a weight (1–10), pass/fail criteria across three levels, a suggested assessment modality, and tailored interview questions
 - **Multiple input methods** — Upload PDF, DOCX, or TXT files, or paste text directly
 - **PDF and DOCX export** — Download formatted rubrics with color-coded criteria tables
+- **Shareable URLs** — Each rubric gets a unique URL for easy sharing
 - **Dark/light mode** — Theme toggle with system preference detection and localStorage persistence
 - **WCAG 2.1 AA accessible** — Skip navigation, keyboard support, ARIA labels, focus management, reduced motion support
 - **100% test coverage** — Enforced across statements, branches, functions, and lines
