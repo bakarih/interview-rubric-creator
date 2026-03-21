@@ -213,6 +213,22 @@ A `Dockerfile` is also provided for alternative container-based deployments.
 
 We welcome contributions from everyone — no coding required. See [CONTRIBUTING.md](CONTRIBUTING.md) for all the ways you can help, from sharing feedback to submitting code.
 
+## Why I Built This
+
+Interview evaluation is an assessment problem — and most teams are solving it without the tools that educators figured out decades ago.
+
+I've seen this from every angle. As an interviewer, I've sat on panels where everyone walked away with different impressions of the same candidate — not because we disagreed, but because we were measuring different things. As a candidate, I've experienced interviews where the success criteria felt invisible until the rejection email arrived.
+
+But before I was an engineering manager, I spent over a decade as an educator. I studied authentic assessment and standards-based learning — approaches built on a simple insight: when you make success criteria explicit and observable, evaluation becomes fairer and learning becomes clearer.
+
+The same principles apply whether you're grading a physics lab or interviewing a senior engineer. Define what "good" looks like *before* you start evaluating. Make the rubric visible to everyone. Align your panel on what you're actually measuring.
+
+My MS research in AI and my work teaching technical interview prep at CodePath gave me the tools to finally build something. I architected and shipped this MVP in 3 days using Claude Code, GitHub Actions, and AWS App Runner.
+
+This is my attempt to bring those insights into hiring — and I'm building it in public.
+
+— [Bakari Holmes](https://linkedin.com/in/bakariholmes)
+
 ## License
 
-Private — not licensed for redistribution.
+[MIT License](LICENSE) — free to use, modify, and distribute.
