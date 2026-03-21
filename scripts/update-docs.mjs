@@ -104,13 +104,18 @@ async function readSourceFiles() {
 }
 
 async function readDoc(filename) {
-  const filePath = join(ROOT, 'docs', filename);
+  // Support both docs/ files and root-level files like README.md
+  const filePath = filename.includes('/') || filename === 'README.md'
+    ? join(ROOT, filename)
+    : join(ROOT, 'docs', filename);
   if (!existsSync(filePath)) return '';
   return readFile(filePath, 'utf8');
 }
 
 async function writeDoc(filename, content) {
-  const filePath = join(ROOT, 'docs', filename);
+  const filePath = filename.includes('/') || filename === 'README.md'
+    ? join(ROOT, filename)
+    : join(ROOT, 'docs', filename);
   await writeFile(filePath, content, 'utf8');
 }
 
@@ -143,16 +148,20 @@ async function main() {
 
   const docs = [
     {
+      filename: 'README.md',
+      description: 'main README (project overview, architecture diagram, getting started, tech stack, features, environment variables, deployment)',
+    },
+    {
       filename: 'ARCHITECTURE.md',
-      description: 'architecture (module structure, flow, design decisions)',
+      description: 'architecture (module structure, data flow, design decisions, type system, deployment)',
     },
     {
       filename: 'API.md',
-      description: 'API reference (endpoints, request/response shapes, errors)',
+      description: 'API reference (endpoints, request/response shapes with examples, errors)',
     },
     {
-      filename: 'LIMITATIONS.md',
-      description: 'known limitations and constraints',
+      filename: 'CAPABILITIES.md',
+      description: 'capabilities and limitations (what the app and AI model can/cannot do, v2 roadmap)',
     },
   ];
 
@@ -166,7 +175,7 @@ async function main() {
 
     try {
       const stream = await client.messages.stream({
-        model: 'claude-opus-4-5',
+        model: 'claude-sonnet-4-20250514',
         max_tokens: 4096,
         messages: [{ role: 'user', content: prompt }],
       });
