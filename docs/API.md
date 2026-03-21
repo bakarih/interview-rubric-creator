@@ -163,8 +163,8 @@ Exports a rubric as a downloadable PDF or DOCX file.
 **Response (200):**
 
 Binary file download with appropriate headers:
-- PDF: `Content-Type: application/pdf`
-- DOCX: `Content-Type: application/vnd.openxmlformats-officedocument.wordprocessingml.document`
+- PDF: `Content-Type: application/pdf; Content-Disposition: attachment; filename="rubric.pdf"`
+- DOCX: `Content-Type: application/vnd.openxmlformats-officedocument.wordprocessingml.document; Content-Disposition: attachment; filename="rubric.docx"`
 
 **Errors:**
 

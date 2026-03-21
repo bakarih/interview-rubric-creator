@@ -2,7 +2,7 @@
 
 ## Overview
 
-Interview Rubric Creator is a Next.js 16 application that uses Claude AI (Sonnet 4) to transform job descriptions into structured interview rubrics. It runs as a stateless server — no database, no cloud storage — with all rubric data stored client-side in localStorage.
+Interview Rubric Creator is a Next.js application that uses Claude AI (claude-sonnet-4-20250514) to transform job descriptions into structured interview rubrics. It runs as a stateless server — no database, no cloud storage — with all rubric data stored client-side in localStorage.
 
 ## Data Flow
 
@@ -18,14 +18,14 @@ User Input                    Server (API Routes)                     External
 ┌──────────┐              POST /api/extract
 │  Paste    │──── JSON ──▶  │ Validates with Zod (TextInputSchema)
 │  text     │               │ Sends text to Claude ──────────────▶ Anthropic API
-└──────────┘               │ Strips markdown fences                (claude-sonnet-4)
+└──────────┘               │ Strips markdown fences                (claude-sonnet-4-20250514)
                             │ Parses JSON response
                             │ Returns JobDescription + signals
                             ▼
                        POST /api/generate
                         │ Validates role, level, signals
                         │ Sends to Claude ───────────────────▶ Anthropic API
-                        │ Strips markdown fences               (claude-sonnet-4)
+                        │ Strips markdown fences               (claude-sonnet-4-20250514)
                         │ Parses JSON, assigns UUIDs
                         │ Returns complete Rubric
                         ▼
@@ -52,7 +52,7 @@ User Input                    Server (API Routes)                     External
 src/
 ├── app/                          # Next.js App Router
 │   ├── api/
-│   │   ├── parse/route.ts        # File → raw text
+│   │   ├── parse/route.ts        # File → raw text (pdf-parse/mammoth)
 │   │   ├── extract/route.ts      # Text → JobDescription (Claude)
 │   │   ├── generate/route.ts     # Signals → Rubric (Claude)
 │   │   └── export/route.ts       # Rubric → PDF/DOCX binary
@@ -89,7 +89,7 @@ src/
 └── types/
     ├── rubric.ts                 # Rubric, Signal, AssessmentModality
     ├── signal.ts                 # ExtractedSignal, SignalCategory
-    └── jd.ts                     # JobDescription, JobLevel
+    └── jd.ts                     # JobDescription, JobLevel, ParsedFile
 ```
 
 ## Key Design Decisions
@@ -107,11 +107,19 @@ The AI work is split into two calls rather than one:
 
 This separation improves reliability. Each call has a narrower scope, making Claude's output more consistent and easier to validate.
 
+### Enhanced PDF/DOCX Export
+The export system builds professional documents using React components for PDFs (@react-pdf/renderer) and structured document objects for DOCX (docx library). Both formats include:
+- Weighted signal ranking
+- Color-coded criteria tables (exceeds/meets/below)
+- Suggested questions per signal
+- Assessment modality indicators
+- Responsive design optimized for printing
+
+### Geist Font System
+The application uses Next.js Geist fonts (sans and mono variants) for consistent typography across all components and exported documents.
+
 ### Zod Validation at Every Boundary
 All API inputs are validated with Zod schemas before processing. Claude's JSON responses are also parsed and validated. This catches malformed data early and provides clear error messages.
-
-### Standalone Next.js Output
-The `output: 'standalone'` config produces a self-contained Node.js server at `.next/standalone/`. This is used by both the Dockerfile and the App Runner source-based build for production deployment.
 
 ## Type System
 
@@ -172,6 +180,6 @@ The production app runs on **AWS App Runner** (us-east-1) with:
 - Auto-deploy on push
 - Node.js 22 runtime
 - 1 vCPU, 2 GB RAM instances
-- Standalone Next.js output (`node .next/standalone/server.js`)
+- Environment variable: `ANTHROPIC_API_KEY`
 
 A multi-stage `Dockerfile` is also available for container-based deployments.

@@ -12,17 +12,17 @@
 ### AI-Powered Extraction
 The application uses Claude Sonnet 4 to analyze job descriptions and extract:
 - **Role title** — The position being hired for
-- **Seniority level** — Classified into one of 10 levels: entry, mid, senior, staff, principal, manager, senior manager, director, VP, executive
+- **Seniority level** — Classified into one of 10 levels: entry, mid, senior, staff, principal, manager, senior_manager, director, vp, executive
 - **Department and company** — When identifiable from the text
 - **Requirements and responsibilities** — Parsed into structured lists
 - **Qualifications** — Separated into required vs. preferred
-- **Hiring signals** — 5–10 key competencies the role demands, each categorized (technical skills, domain knowledge, leadership, communication, collaboration, problem solving, culture fit, experience) and rated by importance (critical, important, nice-to-have)
+- **Hiring signals** — 5–10 key competencies the role demands, each categorized (technical_skills, domain_knowledge, leadership, communication, collaboration, problem_solving, culture_fit, experience) and rated by importance (critical, important, nice_to_have)
 
 ### Rubric Generation
 From the extracted signals, Claude generates a complete interview rubric where each signal includes:
 - **Weight (1–10)** — Relative importance for the hiring decision
 - **Three-tier criteria** — Specific, observable descriptions for exceeds / meets / below expectations
-- **Assessment modality** — The recommended interview format: pair programming, system design, code review, behavioral, take-home, technical discussion, presentation, or case study
+- **Assessment modality** — The recommended interview format: pair_programming, system_design, code_review, behavioral, take_home, technical_discussion, presentation, or case_study
 - **Interview questions** — 2–3 tailored behavioral or situational questions
 
 ### Export
@@ -57,7 +57,7 @@ The application uses **Claude Sonnet 4** (`claude-sonnet-4-20250514`) for both e
 - **Criteria writing** — Generates specific, observable criteria that distinguish between performance levels
 - **Question generation** — Creates relevant behavioral and situational questions tied to each signal
 - **Level detection** — Generally accurate at identifying seniority level from title, requirements, and years of experience
-- **Modality matching** — Suggests appropriate assessment formats (e.g., system design for architecture roles, pair programming for hands-on coding roles)
+- **Modality matching** — Suggests appropriate assessment formats (e.g., system_design for architecture roles, pair_programming for hands-on coding roles)
 
 ### What the Model Handles Reasonably
 - **Ambiguous job descriptions** — Produces usable rubrics even from vague or poorly written JDs, though signal quality will reflect input quality
@@ -84,7 +84,7 @@ The application uses **Claude Sonnet 4** (`claude-sonnet-4-20250514`) for both e
 ### Rubric Generation
 - **Weights are suggestions** — The 1–10 weights reflect the model's interpretation of signal importance. Hiring teams should review and adjust weights based on their priorities.
 - **Criteria are starting points** — The exceeds/meets/below criteria are generated guidelines. They should be calibrated to the specific team's expectations and bar.
-- **Modality suggestions** — The suggested assessment format (pair programming, system design, etc.) is a recommendation. Teams should adapt based on their interview process and constraints.
+- **Modality suggestions** — The suggested assessment format (pair_programming, system_design, etc.) is a recommendation. Teams should adapt based on their interview process and constraints.
 - **No organizational context** — The model has no knowledge of your company's culture, existing team composition, or internal expectations. Rubrics reflect only what's in the job description.
 - **Maximum 15 signals** — Rubrics are capped at 15 signals to keep interviews focused and practical.
 
@@ -102,7 +102,7 @@ The application uses **Claude Sonnet 4** (`claude-sonnet-4-20250514`) for both e
 
 ### Cost
 - **API usage** — Each job description processed makes two API calls to Claude (extract + generate). At current Sonnet 4 pricing, expect roughly $0.01–0.05 per rubric depending on JD length.
-- **Hosting** — AWS App Runner costs approximately $5–16/month at low traffic volumes.
+- **Hosting** — The application runs on a modern Next.js architecture with API routes.
 
 ---
 

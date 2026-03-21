@@ -95,11 +95,11 @@ npm start
 
 | Layer | Technology | Purpose |
 |-------|-----------|---------|
-| Framework | [Next.js 16](https://nextjs.org/) (App Router) | Full-stack React framework with SSR |
+| Framework | [Next.js 15](https://nextjs.org/) (App Router) | Full-stack React framework with SSR |
 | Language | [TypeScript 5](https://www.typescriptlang.org/) | Type safety across the codebase |
 | AI | [Claude Sonnet 4](https://docs.anthropic.com/) via Anthropic SDK | Job description analysis and rubric generation |
 | Styling | [Tailwind CSS 4](https://tailwindcss.com/) | Utility-first CSS with dark mode support |
-| Validation | [Zod 4](https://zod.dev/) | Runtime schema validation for all inputs and outputs |
+| Validation | [Zod 3](https://zod.dev/) | Runtime schema validation for all inputs and outputs |
 | PDF Export | [@react-pdf/renderer](https://react-pdf.org/) | PDF document generation with React components |
 | DOCX Export | [docx](https://docx.js.org/) | Word document generation |
 | File Parsing | [pdf-parse](https://www.npmjs.com/package/pdf-parse), [mammoth](https://www.npmjs.com/package/mammoth) | PDF and DOCX text extraction |
@@ -151,11 +151,37 @@ src/
 
 ## API Reference
 
-See [docs/API.md](docs/API.md) for the full API reference covering all four endpoints.
+### POST /api/parse
 
-## Capabilities and Limitations
+Extracts text content from uploaded files.
 
-See [docs/CAPABILITIES.md](docs/CAPABILITIES.md) for a detailed breakdown of what the application and AI model can and cannot do.
+**Request**: `multipart/form-data` with a `file` field
+**Response**: `{ text: string }`
+**Supported formats**: PDF, DOCX, TXT (max 5MB)
+
+### POST /api/extract
+
+Analyzes job description text and extracts structured information.
+
+**Request**: `{ text: string }`
+**Response**: Job description with role, level, and extracted signals
+**AI Model**: Claude Sonnet 4
+
+### POST /api/generate
+
+Transforms extracted signals into a complete interview rubric.
+
+**Request**: `{ role: string, level: string, signals: ExtractedSignal[] }`
+**Response**: Complete rubric with weighted signals, criteria, and questions
+**AI Model**: Claude Sonnet 4
+
+### POST /api/export
+
+Exports rubric as PDF or DOCX file.
+
+**Request**: `{ rubric: Rubric, format: 'pdf' | 'docx' }`
+**Response**: Binary file download
+**Libraries**: @react-pdf/renderer, docx
 
 ## Environment Variables
 
