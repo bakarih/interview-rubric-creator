@@ -82,12 +82,14 @@ src/
 │   │       ├── extractJD.ts      # System prompt for JD extraction
 │   │       └── generateRubric.ts # System prompt for rubric generation
 │   ├── parsers/
+│   │   ├── index.ts              # Parser dispatcher
 │   │   ├── pdfParser.ts          # pdf-parse wrapper
 │   │   ├── docxParser.ts         # mammoth wrapper
 │   │   └── txtParser.ts          # Buffer.toString()
 │   └── validation/
 │       └── schemas.ts            # All Zod schemas
 └── types/
+    ├── index.ts                  # Type exports
     ├── rubric.ts                 # Rubric, Signal, AssessmentModality
     ├── signal.ts                 # ExtractedSignal, SignalCategory
     └── jd.ts                     # JobDescription, JobLevel, ParsedFile

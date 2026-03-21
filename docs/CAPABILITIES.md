@@ -10,7 +10,7 @@
 - **File size** — Supports uploads up to 5 MB
 
 ### AI-Powered Extraction
-The application uses Claude Sonnet 4 to analyze job descriptions and extract:
+The application uses Claude Sonnet 4 (`claude-sonnet-4-20250514`) to analyze job descriptions and extract:
 - **Role title** — The position being hired for
 - **Seniority level** — Classified into one of 10 levels: entry, mid, senior, staff, principal, manager, senior_manager, director, vp, executive
 - **Department and company** — When identifiable from the text
@@ -28,6 +28,7 @@ From the extracted signals, Claude generates a complete interview rubric where e
 ### Export
 - **PDF** — Formatted document with color-coded criteria tables (green for exceeds, blue for meets, orange for below), sorted by signal weight with proper accessibility support
 - **DOCX** — Structured Word document with headings, color-coded tables, and formatting, compatible with Google Docs
+- **Dynamic filename** — Exports use generic names (rubric.pdf, rubric.docx)
 
 ### User Experience
 - **Dark and light mode** — Toggle with system preference detection, persisted across sessions
