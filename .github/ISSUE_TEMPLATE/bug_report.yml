@@ -1,0 +1,64 @@
+name: Report a Bug
+description: Something isn't working as expected
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting this! The more detail you can provide, the faster we can fix it.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: A clear description of the bug
+      placeholder: "I uploaded a PDF and clicked 'Generate Rubric', but got a 'Something went wrong' error..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect to happen?
+      placeholder: "I expected to see a generated rubric with weighted signals..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: How can we reproduce this?
+      placeholder: |
+        1. Go to interviewrubric.com
+        2. Upload a PDF job description
+        3. Click 'Extract Job Description'
+        4. See error message
+    validations:
+      required: true
+
+  - type: dropdown
+    id: input-method
+    attributes:
+      label: How did you provide the job description?
+      options:
+        - Uploaded a PDF
+        - Uploaded a DOCX
+        - Uploaded a TXT file
+        - Pasted text directly
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Browser, OS, or any relevant details
+      placeholder: "Chrome 130 on macOS, dark mode enabled"
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots
+      description: If applicable, add screenshots to help explain the problem

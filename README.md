@@ -205,6 +205,10 @@ The app is deployed on **AWS App Runner** with auto-deploy from the `main` branc
 
 A `Dockerfile` is also provided for alternative container-based deployments.
 
+## Contributing
+
+We welcome contributions from everyone — no coding required. See [CONTRIBUTING.md](CONTRIBUTING.md) for all the ways you can help, from sharing feedback to submitting code.
+
 ## License
 
 Private — not licensed for redistribution.

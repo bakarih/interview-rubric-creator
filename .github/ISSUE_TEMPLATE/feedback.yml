@@ -1,0 +1,62 @@
+name: Share Feedback
+description: Tell us about your experience using Interview Rubric Creator
+title: "[Feedback]: "
+labels: ["feedback"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to share your thoughts! Your perspective helps make this tool better for everyone.
+
+  - type: dropdown
+    id: role
+    attributes:
+      label: What's your role?
+      options:
+        - Recruiter
+        - Hiring Manager
+        - Interviewer / Engineer
+        - HR / People Ops
+        - Candidate
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-you-tried
+    attributes:
+      label: What did you use the tool for?
+      description: What kind of job description did you upload? What were you hoping to get?
+      placeholder: "I uploaded a Senior Backend Engineer JD to create a rubric for our interview panel..."
+    validations:
+      required: true
+
+  - type: dropdown
+    id: rubric-quality
+    attributes:
+      label: How useful was the generated rubric?
+      options:
+        - Very useful — I could use it as-is
+        - Somewhat useful — needed some edits
+        - Not very useful — needed major changes
+        - Not useful at all
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-worked
+    attributes:
+      label: What worked well?
+      placeholder: "The signal weights were spot-on, and the suggested questions were great..."
+
+  - type: textarea
+    id: what-didnt
+    attributes:
+      label: What could be improved?
+      placeholder: "The criteria for 'exceeds expectations' were too vague for our bar..."
+
+  - type: textarea
+    id: anything-else
+    attributes:
+      label: Anything else?
+      placeholder: Additional context, suggestions, or thoughts

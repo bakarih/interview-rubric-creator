@@ -1,0 +1,64 @@
+name: Suggest a Feature
+description: Have an idea for how this could be better?
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        We'd love to hear your ideas! Tell us what would make Interview Rubric Creator more useful for you.
+
+  - type: dropdown
+    id: role
+    attributes:
+      label: What's your role?
+      options:
+        - Recruiter
+        - Hiring Manager
+        - Interviewer / Engineer
+        - HR / People Ops
+        - Candidate
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem would this solve?
+      description: Describe the gap or pain point you're experiencing
+      placeholder: "When I generate a rubric, I can't edit the signals before exporting. I have to edit the PDF manually..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: What would the ideal solution look like?
+      description: Describe what you'd like to see
+      placeholder: "An editable rubric view where I can adjust weights, rewrite criteria, and add/remove signals before exporting..."
+    validations:
+      required: true
+
+  - type: dropdown
+    id: impact
+    attributes:
+      label: How much would this improve your workflow?
+      options:
+        - Game-changer — I'd use this daily
+        - Nice to have — would save me time occasionally
+        - Minor — small quality of life improvement
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: What do you currently do instead?
+      placeholder: "I manually create rubrics in Google Sheets, which takes about 2 hours per role..."
+
+  - type: textarea
+    id: anything-else
+    attributes:
+      label: Anything else?
+      placeholder: Additional context, mockups, or examples
