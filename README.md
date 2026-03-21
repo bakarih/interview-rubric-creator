@@ -169,7 +169,7 @@ Analyzes job description text and extracts structured information.
 
 **Request**: `{ text: string }`  
 **Response**: Job description with role, level, and extracted signals  
-**AI Model**: Claude Sonnet 4
+**AI Model**: Claude Haiku 4 (optimized for speed)
 
 ### POST /api/generate
 

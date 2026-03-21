@@ -2,7 +2,7 @@
 
 ## Overview
 
-Interview Rubric Creator is a Next.js application that uses Claude AI (claude-sonnet-4-20250514) to transform job descriptions into structured interview rubrics. It runs as a stateless server — no database, no cloud storage — with all rubric data stored client-side in localStorage.
+Interview Rubric Creator is a Next.js application that uses Claude AI (claude-sonnet-4-20250514 and claude-haiku-4-5-20251001) to transform job descriptions into structured interview rubrics. It runs as a stateless server — no database, no cloud storage — with all rubric data stored client-side in localStorage.
 
 ## Data Flow
 
@@ -18,14 +18,16 @@ User Input                    Server (API Routes)                     External
 ┌──────────┐              POST /api/extract
 │  Paste    │──── JSON ──▶  │ Validates with Zod (TextInputSchema)
 │  text     │               │ Sends text to Claude ──────────────▶ Anthropic API
-└──────────┘               │ Strips markdown fences                (claude-sonnet-4-20250514)
+└──────────┘               │ (claude-haiku-4-5-20251001)        (faster extraction)
+                            │ Strips markdown fences
                             │ Parses JSON response
                             │ Returns JobDescription + signals
                             ▼
                        POST /api/generate
                         │ Validates role, level, signals
                         │ Sends to Claude ───────────────────▶ Anthropic API
-                        │ Strips markdown fences               (claude-sonnet-4-20250514)
+                        │ (claude-sonnet-4-20250514)          (higher quality generation)
+                        │ Strips markdown fences
                         │ Parses JSON, assigns UUIDs
                         │ Returns complete Rubric
                         ▼
@@ -53,8 +55,8 @@ src/
 ├── app/                          # Next.js App Router
 │   ├── api/
 │   │   ├── parse/route.ts        # File → raw text (pdf-parse/mammoth)
-│   │   ├── extract/route.ts      # Text → JobDescription (Claude)
-│   │   ├── generate/route.ts     # Signals → Rubric (Claude)
+│   │   ├── extract/route.ts      # Text → JobDescription (Claude Haiku)
+│   │   ├── generate/route.ts     # Signals → Rubric (Claude Sonnet)
 │   │   └── export/route.ts       # Rubric → PDF/DOCX binary
 │   ├── rubric/[id]/page.tsx      # Dynamic rubric view with localStorage loading
 │   ├── page.tsx                  # Home page with tab-based input (upload/paste)
@@ -103,15 +105,15 @@ Rubrics are stored in the browser's localStorage. This eliminates database costs
 ### In-Memory File Processing
 Uploaded files are parsed in-memory and never written to disk or cloud storage. This simplifies the architecture (no S3 bucket needed) and avoids storing potentially sensitive job description data.
 
-### Two-Step Claude Pipeline
-The AI work is split into two calls rather than one:
-1. **Extract** — Identify signals from the raw text (smaller, focused task)
-2. **Generate** — Build the rubric from extracted signals (structured generation)
+### Multi-Model Claude Pipeline with Specialized Tasks
+The AI work is split into two calls using different Claude models:
+1. **Extract** — Identify signals from raw text using Claude Haiku (faster, cost-effective for parsing)
+2. **Generate** — Build the rubric from extracted signals using Claude Sonnet (higher quality structured generation)
 
-This separation improves reliability. Each call has a narrower scope, making Claude's output more consistent and easier to validate.
+This separation improves both performance and cost-effectiveness while maintaining output quality for complex rubric generation.
 
-### React-Based Export System with Dynamic Document Generation
-The export system builds documents using React components and native rendering libraries:
+### React-Based Export System with Server-Side Document Generation
+The export system builds documents server-side using React components and native libraries:
 - **PDF**: @react-pdf/renderer with React.createElement for dynamic component generation
 - **DOCX**: docx library with Table/TableRow/TableCell components for structured layouts
 
@@ -120,23 +122,26 @@ Both formats include:
 - Color-coded criteria tables (exceeds/meets/below with semantic colors)
 - Suggested questions per signal
 - Assessment modality indicators
-- Professional styling with consistent spacing and typography
+- Professional styling with consistent typography
 
 Documents are generated server-side and returned as binary downloads with appropriate Content-Type headers.
 
-### Geist Font System
-The application uses Next.js Geist fonts (sans and mono variants) for consistent typography across all components and exported documents.
+### Client-Side State Management with Dynamic Routing
+The application uses a stateful client-side architecture:
+- **Multi-Stage Flow**: Input → Loading → Result → Error states with proper focus management
+- **Tab-based Input**: Upload/paste interface with ARIA roles and keyboard navigation
+- **Dynamic Routing**: `/rubric/[id]` pages load rubrics from localStorage
+- **Comprehensive Loading States**: Status message cycling with accessibility announcements
 
 ### Comprehensive Validation Pipeline
 All API inputs are validated with Zod schemas before processing. Claude's JSON responses are stripped of markdown fences and validated. This catches malformed data early and provides clear error messages.
 
 ### Enhanced User Experience
-- **Tab-based Input**: Upload/paste tabs on the home page with proper ARIA roles
-- **Multi-Stage Loading**: Contextual progress indicators with cycling status messages
-- **Feedback System**: GitHub-integrated feedback menu with issue templates
 - **Accessibility**: Skip links, focus management, ARIA labels, screen reader support
-- **Dark Mode**: Theme toggle with localStorage persistence and system preference detection
-- **Client-Side Routing**: Dynamic rubric URLs with localStorage integration
+- **Theme System**: Dark/light mode toggle with localStorage persistence
+- **Feedback Integration**: GitHub issue templates for bug reports and feature requests
+- **Progressive Enhancement**: File drag-and-drop with fallback click-to-upload
+- **Error Handling**: Contextual error messages with retry functionality
 
 ## Type System
 

@@ -10,7 +10,7 @@
 - **File size** — Supports uploads up to 5 MB
 
 ### AI-Powered Extraction
-The application uses Claude Sonnet 4 (`claude-sonnet-4-20250514`) to analyze job descriptions and extract:
+The application uses **Claude Haiku 4** (`claude-haiku-4-5-20251001`) for extraction and **Claude Sonnet 4** (`claude-sonnet-4-20250514`) for generation to analyze job descriptions and extract:
 - **Role title** — The position being hired for
 - **Seniority level** — Classified into one of 10 levels: entry, mid, senior, staff, principal, manager, senior_manager, director, vp, executive
 - **Department and company** — When identifiable from the text
@@ -26,8 +26,8 @@ From the extracted signals, Claude generates a complete interview rubric where e
 - **Interview questions** — 2–3 tailored behavioral or situational questions (capped at 5 per signal)
 
 ### Export
-- **PDF** — Formatted A4 document with proper table structure, color-coded criteria labels (green for exceeds, blue for meets, orange for below), numbered signals sorted by weight, and comprehensive accessibility support
-- **DOCX** — Structured Word document with proper heading hierarchy, color-coded table cells with background shading, borderless tables for clean formatting, and full Google Docs compatibility
+- **PDF** — Formatted A4 document with proper table structure, color-coded criteria labels (green for exceeds, blue for meets, orange for below), numbered signals sorted by weight, and comprehensive accessibility support using React PDF
+- **DOCX** — Structured Word document with proper heading hierarchy, color-coded table cells with background shading, borderless tables for clean formatting, and full Google Docs compatibility using the docx library
 - **Fixed filenames** — Exports use standardized names (rubric.pdf, rubric.docx)
 
 ### User Experience
@@ -54,7 +54,7 @@ From the extracted signals, Claude generates a complete interview rubric where e
 
 ## AI Model Capabilities
 
-The application uses **Claude Sonnet 4** (`claude-sonnet-4-20250514`) for both extraction and generation with a two-step API process.
+The application uses **Claude Haiku 4** (`claude-haiku-4-5-20251001`) for extraction and **Claude Sonnet 4** (`claude-sonnet-4-20250514`) for generation with a two-step API process.
 
 ### What the Model Does Well
 - **Structured output** — Reliably produces valid JSON matching the expected schema with automatic markdown fence stripping
@@ -109,7 +109,7 @@ The application uses **Claude Sonnet 4** (`claude-sonnet-4-20250514`) for both e
 - **Fixed filename format** — Exported files use generic names (rubric.pdf, rubric.docx) rather than role-specific names.
 
 ### Cost
-- **API usage** — Each job description processed makes two API calls to Claude (extract + generate). At current Sonnet 4 pricing, expect roughly $0.01–0.05 per rubric depending on JD length.
+- **API usage** — Each job description processed makes two API calls: one to Claude Haiku 4 for extraction and one to Claude Sonnet 4 for generation. At current pricing, expect roughly $0.01–0.05 per rubric depending on JD length.
 - **Hosting** — The application runs on a Next.js architecture with server-side API routes.
 
 ---
