@@ -18,10 +18,11 @@ export async function POST(request: NextRequest) {
 
     const { text } = inputValidation.data;
 
-    // Extract using Claude
+    // Extract using Claude (Haiku for speed — extraction is a simpler task)
     const response = await generateCompletion(
       EXTRACT_JD_SYSTEM_PROMPT,
-      buildExtractJDUserMessage(text)
+      buildExtractJDUserMessage(text),
+      { model: 'claude-haiku-4-5-20251001' }
     );
 
     // Parse and validate response (strip markdown fences if present)

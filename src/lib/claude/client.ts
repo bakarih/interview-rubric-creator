@@ -21,12 +21,13 @@ export async function generateCompletion(
   userMessage: string,
   options?: {
     maxTokens?: number;
+    model?: 'claude-sonnet-4-20250514' | 'claude-haiku-4-5-20251001';
   }
 ): Promise<string> {
   const claude = getClaudeClient();
 
   const response = await claude.messages.create({
-    model: 'claude-sonnet-4-20250514',
+    model: options?.model ?? 'claude-sonnet-4-20250514',
     max_tokens: options?.maxTokens ?? 4096,
     system: systemPrompt,
     messages: [
