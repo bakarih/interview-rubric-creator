@@ -107,13 +107,17 @@ The AI work is split into two calls rather than one:
 
 This separation improves reliability. Each call has a narrower scope, making Claude's output more consistent and easier to validate.
 
-### Enhanced PDF/DOCX Export
-The export system builds professional documents using React components for PDFs (@react-pdf/renderer) and structured document objects for DOCX (docx library). Both formats include:
+### Enhanced PDF/DOCX Export with React Components
+The export system builds professional documents using:
+- **PDF**: @react-pdf/renderer with React.createElement for dynamic component generation
+- **DOCX**: docx library with structured tables and typography
+
+Both formats include:
 - Weighted signal ranking
 - Color-coded criteria tables (exceeds/meets/below)
 - Suggested questions per signal
 - Assessment modality indicators
-- Responsive design optimized for printing
+- Professional styling with consistent spacing and typography
 
 ### Geist Font System
 The application uses Next.js Geist fonts (sans and mono variants) for consistent typography across all components and exported documents.

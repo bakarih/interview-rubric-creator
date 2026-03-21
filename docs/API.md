@@ -28,8 +28,8 @@ Extracts raw text from an uploaded file.
 
 | Status | Reason |
 |--------|--------|
-| 400 | No file provided, unsupported file type, or file exceeds 5 MB |
-| 500 | File parsing failure (e.g., corrupt PDF) |
+| 400 | No file provided, invalid file (unsupported type or exceeds 5 MB) |
+| 500 | File parsing failure (e.g., corrupt PDF, empty file) |
 
 ---
 
@@ -87,7 +87,7 @@ Sends raw text to Claude AI to extract a structured job description with hiring 
 
 | Status | Reason |
 |--------|--------|
-| 400 | Text too short (< 100 chars), too long (> 50,000 chars), or missing |
+| 400 | Invalid input (text too short, too long, or missing) |
 | 500 | Claude API error or response parsing failure |
 
 ---
@@ -142,7 +142,7 @@ Takes extracted signals and generates a complete weighted interview rubric using
 
 | Status | Reason |
 |--------|--------|
-| 400 | Missing `role`, `level`, or `signals` |
+| 400 | Missing required fields: role, level, or signals |
 | 500 | Claude API error or response parsing failure |
 
 ---
@@ -170,5 +170,5 @@ Binary file download with appropriate headers:
 
 | Status | Reason |
 |--------|--------|
-| 400 | Missing rubric, missing format, or invalid format value |
+| 400 | Missing required fields (rubric, format) or invalid format value |
 | 500 | Document generation failure |

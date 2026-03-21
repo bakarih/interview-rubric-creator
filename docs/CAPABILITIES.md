@@ -26,24 +26,25 @@ From the extracted signals, Claude generates a complete interview rubric where e
 - **Interview questions** — 2–3 tailored behavioral or situational questions
 
 ### Export
-- **PDF** — Formatted document with color-coded criteria tables (green for exceeds, blue for meets, orange for below), sorted by signal weight
-- **DOCX** — Structured Word document with headings, tables, and formatting, compatible with Google Docs
+- **PDF** — Formatted document with color-coded criteria tables (green for exceeds, blue for meets, orange for below), sorted by signal weight with proper accessibility support
+- **DOCX** — Structured Word document with headings, color-coded tables, and formatting, compatible with Google Docs
 
 ### User Experience
 - **Dark and light mode** — Toggle with system preference detection, persisted across sessions
-- **Drag-and-drop upload** — Visual feedback on drag state
-- **Keyboard navigation** — Full keyboard support throughout the interface
+- **Drag-and-drop upload** — Visual feedback on drag state with keyboard navigation support
+- **Keyboard navigation** — Full keyboard support throughout the interface including skip-to-content navigation
 - **Loading states** — Rotating status messages during AI processing
 - **Error handling** — Clear error messages with retry functionality
+- **URL-based navigation** — Direct links to individual rubrics (`/rubric/[id]`) with shareable URLs
 
 ### Accessibility (WCAG 2.1 AA)
 - Skip-to-content navigation link
-- Proper heading hierarchy
+- Proper heading hierarchy and semantic landmarks
 - ARIA labels on all interactive elements
-- Semantic HTML landmarks
 - Focus management on state changes
 - Reduced motion support via `prefers-reduced-motion`
 - Color contrast compliance
+- Screen reader compatible tables and form elements
 
 ---
 
