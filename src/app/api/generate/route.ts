@@ -23,7 +23,9 @@ export async function POST(request: NextRequest) {
       { maxTokens: 8192 }
     );
 
-    const generated = JSON.parse(response);
+    // Strip markdown fences if present
+    const cleaned = response.replace(/^```(?:json)?\s*\n?/i, '').replace(/\n?```\s*$/i, '');
+    const generated = JSON.parse(cleaned);
 
     // Build complete rubric
     const rubric: Rubric = {

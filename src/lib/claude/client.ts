@@ -26,7 +26,7 @@ export async function generateCompletion(
   const claude = getClaudeClient();
 
   const response = await claude.messages.create({
-    model: 'claude-opus-4-6',
+    model: 'claude-sonnet-4-20250514',
     max_tokens: options?.maxTokens ?? 4096,
     system: systemPrompt,
     messages: [

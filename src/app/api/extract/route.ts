@@ -24,8 +24,9 @@ export async function POST(request: NextRequest) {
       buildExtractJDUserMessage(text)
     );
 
-    // Parse and validate response
-    const extracted = JSON.parse(response);
+    // Parse and validate response (strip markdown fences if present)
+    const cleaned = response.replace(/^```(?:json)?\s*\n?/i, '').replace(/\n?```\s*$/i, '');
+    const extracted = JSON.parse(cleaned);
     extracted.rawText = text;
 
     return NextResponse.json(extracted);
