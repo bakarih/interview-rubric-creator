@@ -20,6 +20,11 @@ const LINKS = [
     description: 'Have an idea?',
     href: `${REPO_URL}/issues/new?template=feature_request.yml`,
   },
+  {
+    label: 'Contribute Code',
+    description: 'Open a PR on GitHub',
+    href: `${REPO_URL}/blob/main/CONTRIBUTING.md`,
+  },
 ];
 
 export default function FeedbackButton() {
