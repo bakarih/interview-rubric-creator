@@ -64,7 +64,8 @@ src/
 │   ├── common/
 │   │   ├── ThemeToggle.tsx       # Dark/light mode with localStorage
 │   │   ├── LoadingSpinner.tsx    # Animated loading with status messages
-│   │   └── ErrorMessage.tsx      # Error display with retry
+│   │   ├── ErrorMessage.tsx      # Error display with retry
+│   │   └── FeedbackButton.tsx    # GitHub feedback menu
 │   ├── export/
 │   │   └── ExportButtons.tsx     # PDF/DOCX download triggers
 │   ├── rubric/
@@ -107,14 +108,14 @@ The AI work is split into two calls rather than one:
 
 This separation improves reliability. Each call has a narrower scope, making Claude's output more consistent and easier to validate.
 
-### Enhanced PDF/DOCX Export with React Components
+### React-Based PDF/DOCX Export with Professional Styling
 The export system builds professional documents using:
 - **PDF**: @react-pdf/renderer with React.createElement for dynamic component generation
-- **DOCX**: docx library with structured tables and typography
+- **DOCX**: docx library with structured tables, borders, and shading
 
 Both formats include:
-- Weighted signal ranking
-- Color-coded criteria tables (exceeds/meets/below)
+- Weighted signal ranking (sorted by importance)
+- Color-coded criteria tables (exceeds/meets/below with semantic colors)
 - Suggested questions per signal
 - Assessment modality indicators
 - Professional styling with consistent spacing and typography
@@ -124,6 +125,12 @@ The application uses Next.js Geist fonts (sans and mono variants) for consistent
 
 ### Zod Validation at Every Boundary
 All API inputs are validated with Zod schemas before processing. Claude's JSON responses are also parsed and validated. This catches malformed data early and provides clear error messages.
+
+### Enhanced User Experience
+- **Feedback System**: FeedbackButton component provides GitHub issue templates for feedback, bug reports, and feature requests
+- **Accessibility**: Skip links, focus management, ARIA labels, and semantic HTML throughout
+- **Dark Mode**: Theme toggle with localStorage persistence and system preference detection
+- **Loading States**: Multi-stage progress indicators with contextual messages
 
 ## Type System
 

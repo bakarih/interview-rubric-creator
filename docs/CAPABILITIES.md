@@ -33,7 +33,7 @@ From the extracted signals, Claude generates a complete interview rubric where e
 - **Dark and light mode** — Toggle with system preference detection, persisted across sessions
 - **Drag-and-drop upload** — Visual feedback on drag state with keyboard navigation support
 - **Keyboard navigation** — Full keyboard support throughout the interface including skip-to-content navigation
-- **Loading states** — Rotating status messages during AI processing
+- **Loading states** — Rotating status messages during AI processing ("Parsing document...", "Extracting signals...", "Generating rubric...")
 - **Error handling** — Clear error messages with retry functionality
 - **URL-based navigation** — Direct links to individual rubrics (`/rubric/[id]`) with shareable URLs
 
@@ -42,9 +42,8 @@ From the extracted signals, Claude generates a complete interview rubric where e
 - Proper heading hierarchy and semantic landmarks
 - ARIA labels on all interactive elements
 - Focus management on state changes
-- Reduced motion support via `prefers-reduced-motion`
-- Color contrast compliance
 - Screen reader compatible tables and form elements
+- Tabbed interface with proper ARIA attributes
 
 ---
 
@@ -93,17 +92,17 @@ The application uses **Claude Sonnet 4** (`claude-sonnet-4-20250514`) for both e
 - **No persistence** — Rubrics are stored only in the browser's localStorage. Clearing browser data deletes all rubrics permanently. There is no cloud backup or sync.
 - **No cross-device access** — Rubrics created on one device/browser are not accessible from another.
 - **No authentication** — The application is open access with no user accounts or access controls.
-- **API key exposure risk** — The Anthropic API key is stored as a server-side environment variable. It is never sent to the client, but anyone with server access can read it.
+- **API key security** — The Anthropic API key is stored as a server-side environment variable and never exposed to the client.
 - **Job descriptions are sent to Anthropic** — The full text of uploaded job descriptions is sent to the Anthropic API for processing. See [Anthropic's data policy](https://www.anthropic.com/policies) for how API inputs are handled.
 
 ### Export
-- **PDF styling** — The PDF export uses a fixed layout. Very long signal names or criteria text may wrap awkwardly.
+- **PDF styling** — The PDF export uses a fixed layout optimized for A4 format. Very long signal names or criteria text may wrap awkwardly.
 - **No Google Docs integration** — DOCX files can be opened in Google Docs, but there is no direct Google Docs API integration.
 - **No edit-and-re-export** — Rubrics cannot be edited in the browser and re-exported. To make changes, you would need to edit the exported document directly.
 
 ### Cost
 - **API usage** — Each job description processed makes two API calls to Claude (extract + generate). At current Sonnet 4 pricing, expect roughly $0.01–0.05 per rubric depending on JD length.
-- **Hosting** — The application runs on a modern Next.js architecture with API routes.
+- **Hosting** — The application runs on a Next.js architecture with server-side API routes.
 
 ---
 

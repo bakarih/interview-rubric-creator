@@ -97,13 +97,13 @@ npm start
 |-------|-----------|---------|
 | Framework | [Next.js 15](https://nextjs.org/) (App Router) | Full-stack React framework with SSR |
 | Language | [TypeScript 5](https://www.typescriptlang.org/) | Type safety across the codebase |
-| AI | [Claude Sonnet 4](https://docs.anthropic.com/) via Anthropic SDK | Job description analysis and rubric generation |
-| Styling | [Tailwind CSS 4](https://tailwindcss.com/) | Utility-first CSS with dark mode support |
+| AI | [Claude 4 Sonnet](https://docs.anthropic.com/) via Anthropic SDK | Job description analysis and rubric generation |
+| Styling | [Tailwind CSS](https://tailwindcss.com/) with Geist fonts | Utility-first CSS with dark mode support |
 | Validation | [Zod 3](https://zod.dev/) | Runtime schema validation for all inputs and outputs |
 | PDF Export | [@react-pdf/renderer](https://react-pdf.org/) | PDF document generation with React components |
 | DOCX Export | [docx](https://docx.js.org/) | Word document generation |
 | File Parsing | [pdf-parse](https://www.npmjs.com/package/pdf-parse), [mammoth](https://www.npmjs.com/package/mammoth) | PDF and DOCX text extraction |
-| Testing | [Jest 30](https://jestjs.io/), [Testing Library](https://testing-library.com/), [Playwright](https://playwright.dev/) | Unit, integration, and E2E testing |
+| Testing | [Jest](https://jestjs.io/), [Testing Library](https://testing-library.com/), [Playwright](https://playwright.dev/) | Unit, integration, and E2E testing |
 | Hosting | [AWS App Runner](https://aws.amazon.com/apprunner/) | Production deployment with auto-deploy from GitHub |
 
 ## Features
@@ -116,6 +116,7 @@ npm start
 - **WCAG 2.1 AA accessible** — Skip navigation, keyboard support, ARIA labels, focus management, reduced motion support
 - **100% test coverage** — Enforced across statements, branches, functions, and lines
 - **Auto-deploy** — Push to `main` triggers automatic deployment via App Runner
+- **Feedback system** — In-app feedback button linking to GitHub issues
 
 ## Architecture
 
@@ -129,9 +130,10 @@ src/
 │   │   └── export/             # Rubric → PDF/DOCX binary
 │   ├── rubric/[id]/            # Dynamic rubric view page
 │   ├── page.tsx                # Home page (upload/paste)
-│   └── layout.tsx              # Root layout with theme support
+│   ├── layout.tsx              # Root layout with theme support
+│   └── globals.css             # Tailwind styles
 ├── components/
-│   ├── common/                 # ThemeToggle, LoadingSpinner, ErrorMessage
+│   ├── common/                 # ThemeToggle, LoadingSpinner, ErrorMessage, FeedbackButton
 │   ├── export/                 # ExportButtons (PDF/DOCX)
 │   ├── rubric/                 # RubricView, SignalCard, WeightBadge
 │   └── upload/                 # FileUpload (drag-drop), TextInput
@@ -155,32 +157,32 @@ src/
 
 Extracts text content from uploaded files.
 
-**Request**: `multipart/form-data` with a `file` field
-**Response**: `{ text: string }`
+**Request**: `multipart/form-data` with a `file` field  
+**Response**: `{ text: string }`  
 **Supported formats**: PDF, DOCX, TXT (max 5MB)
 
 ### POST /api/extract
 
 Analyzes job description text and extracts structured information.
 
-**Request**: `{ text: string }`
-**Response**: Job description with role, level, and extracted signals
-**AI Model**: Claude Sonnet 4
+**Request**: `{ text: string }`  
+**Response**: Job description with role, level, and extracted signals  
+**AI Model**: Claude 4 Sonnet
 
 ### POST /api/generate
 
 Transforms extracted signals into a complete interview rubric.
 
-**Request**: `{ role: string, level: string, signals: ExtractedSignal[] }`
-**Response**: Complete rubric with weighted signals, criteria, and questions
-**AI Model**: Claude Sonnet 4
+**Request**: `{ role: string, level: string, signals: ExtractedSignal[] }`  
+**Response**: Complete rubric with weighted signals, criteria, and questions  
+**AI Model**: Claude 4 Sonnet
 
 ### POST /api/export
 
 Exports rubric as PDF or DOCX file.
 
-**Request**: `{ rubric: Rubric, format: 'pdf' | 'docx' }`
-**Response**: Binary file download
+**Request**: `{ rubric: Rubric, format: 'pdf' | 'docx' }`  
+**Response**: Binary file download  
 **Libraries**: @react-pdf/renderer, docx
 
 ## Environment Variables
