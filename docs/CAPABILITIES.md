@@ -26,9 +26,9 @@ From the extracted signals, Claude generates a complete interview rubric where e
 - **Interview questions** — 2–3 tailored behavioral or situational questions (capped at 5 per signal)
 
 ### Export
-- **PDF** — Formatted document with color-coded criteria tables (green for exceeds, blue for meets, orange for below), sorted by signal weight with proper accessibility support
+- **PDF** — Formatted A4 document with color-coded criteria tables (green for exceeds, blue for meets, orange for below), sorted by signal weight with proper accessibility support
 - **DOCX** — Structured Word document with headings, color-coded tables, and formatting, compatible with Google Docs
-- **Dynamic filename** — Exports use generic names (rubric.pdf, rubric.docx)
+- **Dynamic filename** — Exports use fixed names (rubric.pdf, rubric.docx)
 
 ### User Experience
 - **Dark and light mode** — Toggle with system preference detection, persisted across sessions
@@ -102,7 +102,7 @@ The application uses **Claude Sonnet 4** (`claude-sonnet-4-20250514`) for both e
 - **Job descriptions are sent to Anthropic** — The full text of uploaded job descriptions is sent to the Anthropic API for processing. See [Anthropic's data policy](https://www.anthropic.com/policies) for how API inputs are handled.
 
 ### Export
-- **PDF styling** — The PDF export uses a fixed layout optimized for A4 format. Very long signal names or criteria text may wrap awkwardly.
+- **PDF styling** — The PDF export uses a fixed A4 layout. Very long signal names or criteria text may wrap awkwardly.
 - **No Google Docs integration** — DOCX files can be opened in Google Docs, but there is no direct Google Docs API integration.
 - **No edit-and-re-export** — Rubrics cannot be edited in the browser and re-exported. To make changes, you would need to edit the exported document directly.
 - **Fixed filename format** — Exported files use generic names (rubric.pdf, rubric.docx) rather than role-specific names.

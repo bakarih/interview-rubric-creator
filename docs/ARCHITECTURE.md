@@ -56,33 +56,33 @@ src/
 │   │   ├── extract/route.ts      # Text → JobDescription (Claude)
 │   │   ├── generate/route.ts     # Signals → Rubric (Claude)
 │   │   └── export/route.ts       # Rubric → PDF/DOCX binary
-│   ├── rubric/[id]/page.tsx      # Dynamic rubric view
-│   ├── page.tsx                  # Home page (upload/paste tabs)
-│   ├── layout.tsx                # Root layout, theme provider
+│   ├── rubric/[id]/page.tsx      # Dynamic rubric view with localStorage loading
+│   ├── page.tsx                  # Home page with tab-based input (upload/paste)
+│   ├── layout.tsx                # Root layout with Geist fonts, theme provider
 │   └── globals.css               # Tailwind + accessibility styles
 ├── components/
 │   ├── common/
 │   │   ├── ThemeToggle.tsx       # Dark/light mode with localStorage
 │   │   ├── LoadingSpinner.tsx    # Animated loading with status messages
-│   │   ├── ErrorMessage.tsx      # Error display with retry
-│   │   └── FeedbackButton.tsx    # GitHub feedback menu
+│   │   ├── ErrorMessage.tsx      # Error display with retry, focus management
+│   │   └── FeedbackButton.tsx    # GitHub feedback menu (templated issues)
 │   ├── export/
-│   │   └── ExportButtons.tsx     # PDF/DOCX download triggers
+│   │   └── ExportButtons.tsx     # PDF/DOCX download with loading states
 │   ├── rubric/
-│   │   ├── RubricView.tsx        # Full rubric display
-│   │   ├── SignalCard.tsx        # Individual signal with criteria
-│   │   └── WeightBadge.tsx       # Visual weight indicator
+│   │   ├── RubricView.tsx        # Full rubric display with sorted signals
+│   │   ├── SignalCard.tsx        # Individual signal with criteria table
+│   │   └── WeightBadge.tsx       # Color-coded weight indicator
 │   └── upload/
-│       ├── FileUpload.tsx        # Drag-and-drop file input
+│       ├── FileUpload.tsx        # Drag-and-drop with keyboard support
 │       └── TextInput.tsx         # Textarea with character counter
 ├── lib/
 │   ├── claude/
-│   │   ├── client.ts             # Anthropic SDK wrapper (singleton)
+│   │   ├── client.ts             # Anthropic SDK singleton with completion wrapper
 │   │   └── prompts/
 │   │       ├── extractJD.ts      # System prompt for JD extraction
 │   │       └── generateRubric.ts # System prompt for rubric generation
 │   ├── parsers/
-│   │   ├── index.ts              # Parser dispatcher
+│   │   ├── index.ts              # Parser dispatcher by MIME type
 │   │   ├── pdfParser.ts          # pdf-parse wrapper
 │   │   ├── docxParser.ts         # mammoth wrapper
 │   │   └── txtParser.ts          # Buffer.toString()
@@ -112,7 +112,7 @@ This separation improves reliability. Each call has a narrower scope, making Cla
 
 ### React-Based Export System with Native Document Rendering
 The export system builds documents using React components and native rendering libraries:
-- **PDF**: @react-pdf/renderer with React.createElement for dynamic component generation and professional styling
+- **PDF**: @react-pdf/renderer with React.createElement for dynamic component generation
 - **DOCX**: docx library with structured tables, colored headers, and semantic shading
 
 Both formats include:
@@ -129,11 +129,12 @@ The application uses Next.js Geist fonts (sans and mono variants) for consistent
 All API inputs are validated with Zod schemas before processing. Claude's JSON responses are stripped of markdown fences and validated. This catches malformed data early and provides clear error messages.
 
 ### Enhanced User Experience
+- **Tab-based Input**: Upload/paste tabs on the home page with proper ARIA roles
 - **Multi-Stage Loading**: Contextual progress indicators with cycling status messages
-- **Feedback System**: FeedbackButton component provides GitHub issue templates for feedback, bug reports, and feature requests
-- **Accessibility**: Skip links, focus management, ARIA labels, and semantic HTML throughout
+- **Feedback System**: GitHub-integrated feedback menu with issue templates
+- **Accessibility**: Skip links, focus management, ARIA labels, screen reader support
 - **Dark Mode**: Theme toggle with localStorage persistence and system preference detection
-- **Client-Side Routing**: Dynamic rubric URLs with localStorage integration for sharing and bookmarking
+- **Client-Side Routing**: Dynamic rubric URLs with localStorage integration
 
 ## Type System
 
