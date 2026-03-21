@@ -21,10 +21,13 @@ export default function SignalCard({ signal, index }: SignalCardProps) {
       {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-2 mb-3">
         <div className="flex items-center gap-2">
-          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800 text-xs font-bold text-gray-600 dark:text-gray-400">
+          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800 text-xs font-bold text-gray-600 dark:text-gray-400" aria-hidden="true">
             {index + 1}
           </span>
-          <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">{signal.name}</h3>
+          <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+            <span className="sr-only">Signal {index + 1}: </span>
+            {signal.name}
+          </h3>
         </div>
         <WeightBadge weight={signal.weight} />
       </div>
@@ -42,15 +45,16 @@ export default function SignalCard({ signal, index }: SignalCardProps) {
       {/* Criteria table */}
       <div className="mb-4 overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
         <table className="w-full text-sm">
+          <caption className="sr-only">Evaluation criteria for {signal.name}</caption>
           <thead>
             <tr className="bg-gray-50 dark:bg-gray-800 text-left">
-              <th className="w-1/3 px-4 py-2 font-semibold text-green-700 dark:text-green-400 border-b border-gray-200 dark:border-gray-700">
+              <th scope="col" className="w-1/3 px-4 py-2 font-semibold text-green-700 dark:text-green-400 border-b border-gray-200 dark:border-gray-700">
                 Exceeds
               </th>
-              <th className="w-1/3 px-4 py-2 font-semibold text-blue-700 dark:text-blue-400 border-b border-gray-200 dark:border-gray-700 border-l">
+              <th scope="col" className="w-1/3 px-4 py-2 font-semibold text-blue-700 dark:text-blue-400 border-b border-gray-200 dark:border-gray-700 border-l">
                 Meets
               </th>
-              <th className="w-1/3 px-4 py-2 font-semibold text-orange-700 dark:text-orange-400 border-b border-gray-200 dark:border-gray-700 border-l">
+              <th scope="col" className="w-1/3 px-4 py-2 font-semibold text-orange-700 dark:text-orange-400 border-b border-gray-200 dark:border-gray-700 border-l">
                 Below
               </th>
             </tr>

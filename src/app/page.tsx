@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import FileUpload from '@/components/upload/FileUpload';
 import TextInput from '@/components/upload/TextInput';
@@ -27,6 +27,7 @@ export default function Home() {
   const [statusIndex, setStatusIndex] = useState(0);
   const [rubric, setRubric] = useState<Rubric | null>(null);
   const [errorMessage, setErrorMessage] = useState('');
+  const mainRef = useRef<HTMLElement>(null);
 
   // Compute before any conditional returns so TypeScript doesn't narrow flow
   const isLoading = (flow as string) === 'loading';
@@ -38,6 +39,13 @@ export default function Home() {
       setStatusIndex((prev) => (prev + 1) % STATUS_MESSAGES.length);
     }, 2500);
     return () => clearInterval(interval);
+  }, [flow]);
+
+  // Focus management on flow state changes
+  useEffect(() => {
+    if (flow !== 'input') {
+      mainRef.current?.focus();
+    }
   }, [flow]);
 
   async function runPipeline(text: string) {
@@ -137,7 +145,7 @@ export default function Home() {
 
   if (flow === 'loading') {
     return (
-      <main className="flex min-h-screen flex-col items-center justify-center bg-gray-50 dark:bg-gray-950 px-4">
+      <main id="main-content" ref={mainRef} tabIndex={-1} className="flex min-h-screen flex-col items-center justify-center bg-gray-50 dark:bg-gray-950 px-4 focus:outline-none">
         <div className="w-full max-w-md rounded-2xl bg-white dark:bg-gray-900 p-10 shadow-sm border border-gray-200 dark:border-gray-700 text-center">
           <LoadingSpinner message={STATUS_MESSAGES[statusIndex]} />
         </div>
@@ -147,7 +155,7 @@ export default function Home() {
 
   if (flow === 'result' && rubric) {
     return (
-      <main className="min-h-screen bg-gray-50 dark:bg-gray-950 px-4 py-10">
+      <main id="main-content" ref={mainRef} tabIndex={-1} className="min-h-screen bg-gray-50 dark:bg-gray-950 px-4 py-10 focus:outline-none">
         <div className="mx-auto max-w-3xl space-y-6">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Interview Rubric</h1>
@@ -169,7 +177,7 @@ export default function Home() {
 
   if (flow === 'error') {
     return (
-      <main className="flex min-h-screen flex-col items-center justify-center bg-gray-50 dark:bg-gray-950 px-4">
+      <main id="main-content" ref={mainRef} tabIndex={-1} className="flex min-h-screen flex-col items-center justify-center bg-gray-50 dark:bg-gray-950 px-4 focus:outline-none">
         <div className="w-full max-w-md space-y-4">
           <ErrorMessage message={errorMessage} onRetry={handleReset} />
         </div>
@@ -178,8 +186,11 @@ export default function Home() {
   }
 
   // Input state
+  const charCount = pastedText.trim().length;
+  const canSubmit = charCount >= 100;
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-gray-50 dark:bg-gray-950 px-4 py-12">
+    <main id="main-content" className="flex min-h-screen flex-col items-center justify-center bg-gray-50 dark:bg-gray-950 px-4 py-12">
       <div className="w-full max-w-xl space-y-6">
         {/* Hero */}
         <div className="text-center">
@@ -194,10 +205,14 @@ export default function Home() {
         {/* Card */}
         <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6 shadow-sm">
           {/* Tabs */}
-          <div className="mb-6 flex rounded-lg border border-gray-200 dark:border-gray-700 p-1 bg-gray-50 dark:bg-gray-800">
+          <div className="mb-6 flex rounded-lg border border-gray-200 dark:border-gray-700 p-1 bg-gray-50 dark:bg-gray-800" role="tablist" aria-label="Input method">
             {(['upload', 'paste'] as TabId[]).map((tab) => (
               <button
                 key={tab}
+                role="tab"
+                id={`tab-${tab}`}
+                aria-selected={activeTab === tab}
+                aria-controls={`tabpanel-${tab}`}
                 onClick={() => setActiveTab(tab)}
                 className={[
                   'flex-1 rounded-md py-2 text-sm font-medium transition-colors',
@@ -213,23 +228,31 @@ export default function Home() {
 
           {/* Tab content */}
           {activeTab === 'upload' ? (
-            <div className="space-y-4">
+            <div role="tabpanel" id="tabpanel-upload" aria-labelledby="tab-upload" className="space-y-4">
               <FileUpload onFile={handleFile} disabled={isLoading} />
             </div>
           ) : (
-            <div className="space-y-4">
+            <div role="tabpanel" id="tabpanel-paste" aria-labelledby="tab-paste" className="space-y-4">
               <TextInput
                 value={pastedText}
                 onChange={setPastedText}
                 disabled={isLoading}
               />
-              <button
-                onClick={handleTextSubmit}
-                disabled={pastedText.trim().length < 100 || isLoading}
-                className="w-full rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                Generate Rubric
-              </button>
+              <div className="space-y-1">
+                <button
+                  onClick={handleTextSubmit}
+                  disabled={!canSubmit || isLoading}
+                  aria-describedby={!canSubmit ? 'submit-hint' : undefined}
+                  className="w-full rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  Generate Rubric
+                </button>
+                {!canSubmit && (
+                  <p id="submit-hint" className="text-xs text-gray-500 dark:text-gray-400">
+                    Minimum 100 characters required ({charCount}/100)
+                  </p>
+                )}
+              </div>
             </div>
           )}
         </div>

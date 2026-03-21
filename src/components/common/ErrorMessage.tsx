@@ -1,13 +1,26 @@
 'use client';
 
+import { useEffect, useRef } from 'react';
+
 interface ErrorMessageProps {
   message: string;
   onRetry?: () => void;
 }
 
 export default function ErrorMessage({ message, onRetry }: ErrorMessageProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    containerRef.current?.focus();
+  }, []);
+
   return (
-    <div className="rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950 p-6">
+    <div
+      ref={containerRef}
+      role="alert"
+      tabIndex={-1}
+      className="rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950 p-6 focus:outline-none"
+    >
       <div className="flex items-start gap-3">
         <div className="mt-0.5 flex-shrink-0">
           <svg

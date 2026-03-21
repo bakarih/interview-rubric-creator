@@ -47,13 +47,15 @@ export default function FileUpload({ onFile, disabled }: FileUploadProps) {
       onDragLeave={handleDragLeave}
       role="button"
       tabIndex={disabled ? -1 : 0}
+      aria-label="Upload a job description file. Accepted formats: PDF, DOCX, TXT, max 5 MB"
+      aria-disabled={disabled || undefined}
       onKeyDown={(e) => {
         if ((e.key === 'Enter' || e.key === ' ') && !disabled) {
           inputRef.current?.click();
         }
       }}
       className={[
-        'flex flex-col items-center justify-center rounded-xl border-2 border-dashed p-10 cursor-pointer transition-colors',
+        'flex flex-col items-center justify-center rounded-xl border-2 border-dashed p-10 cursor-pointer transition-colors focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none',
         isDragging
           ? 'border-blue-500 bg-blue-50 dark:bg-blue-950'
           : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 hover:border-gray-400 dark:hover:border-gray-500 hover:bg-gray-100 dark:hover:bg-gray-750',
@@ -69,6 +71,8 @@ export default function FileUpload({ onFile, disabled }: FileUploadProps) {
         className="hidden"
         onChange={handleChange}
         disabled={disabled}
+        aria-label="Choose a job description file"
+        tabIndex={-1}
       />
       <svg
         className="mb-3 h-10 w-10 text-gray-400 dark:text-gray-500"

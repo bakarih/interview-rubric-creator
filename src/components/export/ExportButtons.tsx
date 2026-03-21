@@ -48,11 +48,12 @@ export default function ExportButtons({ rubric }: ExportButtonsProps) {
         <button
           onClick={() => handleExport('pdf')}
           disabled={loading !== null}
+          aria-busy={loading === 'pdf'}
           className="flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           {loading === 'pdf' ? (
             <>
-              <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+              <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" aria-hidden="true" />
               Generating PDF...
             </>
           ) : (
@@ -72,11 +73,12 @@ export default function ExportButtons({ rubric }: ExportButtonsProps) {
         <button
           onClick={() => handleExport('docx')}
           disabled={loading !== null}
+          aria-busy={loading === 'docx'}
           className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           {loading === 'docx' ? (
             <>
-              <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+              <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" aria-hidden="true" />
               Generating DOCX...
             </>
           ) : (
@@ -93,7 +95,7 @@ export default function ExportButtons({ rubric }: ExportButtonsProps) {
           )}
         </button>
       </div>
-      {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+      {error && <p className="text-sm text-red-600 dark:text-red-400" role="alert">{error}</p>}
     </div>
   );
 }

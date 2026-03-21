@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import { use } from 'react';
 import { Rubric } from '@/types';
@@ -14,6 +14,7 @@ interface PageProps {
 export default function RubricPage({ params }: PageProps) {
   const { id } = use(params);
   const [rubric, setRubric] = useState<Rubric | null | undefined>(undefined);
+  const mainRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -27,18 +28,24 @@ export default function RubricPage({ params }: PageProps) {
     return () => clearTimeout(timer);
   }, [id]);
 
+  useEffect(() => {
+    if (rubric !== undefined) {
+      mainRef.current?.focus();
+    }
+  }, [rubric]);
+
   // Still loading from localStorage
   if (rubric === undefined) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-950">
-        <p className="text-sm text-gray-500 dark:text-gray-400">Loading...</p>
+      <main id="main-content" className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-950">
+        <p className="text-sm text-gray-500 dark:text-gray-400" role="status" aria-live="polite">Loading...</p>
       </main>
     );
   }
 
   if (rubric === null) {
     return (
-      <main className="flex min-h-screen flex-col items-center justify-center bg-gray-50 dark:bg-gray-950 px-4">
+      <main id="main-content" ref={mainRef} tabIndex={-1} className="flex min-h-screen flex-col items-center justify-center bg-gray-50 dark:bg-gray-950 px-4 focus:outline-none">
         <div className="text-center space-y-4">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Rubric not found</h1>
           <p className="text-gray-600 dark:text-gray-400">
@@ -56,7 +63,7 @@ export default function RubricPage({ params }: PageProps) {
   }
 
   return (
-    <main className="min-h-screen bg-gray-50 dark:bg-gray-950 px-4 py-10">
+    <main id="main-content" ref={mainRef} tabIndex={-1} className="min-h-screen bg-gray-50 dark:bg-gray-950 px-4 py-10 focus:outline-none">
       <div className="mx-auto max-w-3xl space-y-6">
         {/* Top bar */}
         <div className="flex flex-wrap items-center justify-between gap-4">
@@ -72,6 +79,7 @@ export default function RubricPage({ params }: PageProps) {
           <ExportButtons rubric={rubric} />
         </div>
 
+        <h1 className="sr-only">Interview Rubric</h1>
         <RubricView rubric={rubric} />
       </div>
     </main>
