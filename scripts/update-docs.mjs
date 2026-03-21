@@ -66,13 +66,32 @@ function matchPattern(filePath, pattern) {
   const fp = filePath.replace(/\\/g, '/');
   const pat = pattern.replace(/\\/g, '/');
 
-  // Convert glob to regex
-  const regexStr = pat
-    .replace(/[.+^${}()|[\]\\]/g, '\\$&') // escape regex special chars (not * or ?)
-    .replace(/\\\*/g, '__STAR__') // protect escaped stars
-    .replace(/__STAR____STAR__\//g, '(?:.+/)?') // **/ => match any path prefix
-    .replace(/__STAR____STAR__/g, '.*') // ** => match anything
-    .replace(/__STAR__/g, '[^/]*'); // * => match single segment chars
+  // Convert glob to regex by processing the pattern character by character
+  let regexStr = '';
+  let i = 0;
+  while (i < pat.length) {
+    if (pat[i] === '*' && pat[i + 1] === '*') {
+      // ** matches any number of path segments
+      if (pat[i + 2] === '/') {
+        regexStr += '(?:.+/)?';
+        i += 3;
+      } else {
+        regexStr += '.*';
+        i += 2;
+      }
+    } else if (pat[i] === '*') {
+      // * matches anything except /
+      regexStr += '[^/]*';
+      i++;
+    } else if ('.+^${}()|[]\\'.includes(pat[i])) {
+      // Escape regex special characters
+      regexStr += '\\' + pat[i];
+      i++;
+    } else {
+      regexStr += pat[i];
+      i++;
+    }
+  }
 
   return new RegExp(`^${regexStr}$`).test(fp);
 }
