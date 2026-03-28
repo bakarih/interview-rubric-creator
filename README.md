@@ -97,7 +97,7 @@ npm start
 |-------|-----------|---------|
 | Framework | [Next.js 15](https://nextjs.org/) (App Router) | Full-stack React framework with SSR |
 | Language | [TypeScript 5](https://www.typescriptlang.org/) | Type safety across the codebase |
-| AI | [Claude Sonnet 4](https://docs.anthropic.com/) via Anthropic SDK | Job description analysis and rubric generation |
+| AI | [Claude Sonnet 4 & Haiku 4](https://docs.anthropic.com/) via Anthropic SDK | Job description analysis and rubric generation |
 | Styling | [Tailwind CSS](https://tailwindcss.com/) with Geist fonts | Utility-first CSS with dark mode support |
 | Validation | [Zod 3](https://zod.dev/) | Runtime schema validation for all inputs and outputs |
 | PDF Export | [@react-pdf/renderer](https://react-pdf.org/) | PDF document generation with React components |

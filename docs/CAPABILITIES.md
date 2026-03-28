@@ -23,7 +23,7 @@ From the extracted signals, Claude generates a complete interview rubric where e
 - **Weight (1–10)** — Relative importance for the hiring decision
 - **Three-tier criteria** — Specific, observable descriptions for exceeds / meets / below expectations
 - **Assessment modality** — The recommended interview format: pair_programming, system_design, code_review, behavioral, take_home, technical_discussion, presentation, or case_study
-- **Interview questions** — 2–3 tailored behavioral or situational questions (capped at 5 per signal)
+- **Interview questions** — 2–3 tailored behavioral or situational questions per signal (capped at 5 per signal)
 
 ### Export
 - **PDF** — Formatted A4 document with proper table structure, color-coded criteria labels (green for exceeds, blue for meets, orange for below), numbered signals sorted by weight, and comprehensive accessibility support using React PDF
@@ -105,7 +105,6 @@ The application uses **Claude Haiku 4** (`claude-haiku-4-5-20251001`) for extrac
 - **PDF styling** — The PDF export uses a fixed A4 layout with React PDF rendering. Very long signal names or criteria text may wrap awkwardly.
 - **DOCX formatting** — Uses docx library with borderless tables and color-coded cell backgrounds. Complex formatting may not render identically across all Word processors.
 - **No Google Docs integration** — DOCX files can be opened in Google Docs, but there is no direct Google Docs API integration.
-- **No edit-and-re-export** — Rubrics cannot be edited in the browser and re-exported. To make changes, you would need to edit the exported document directly.
 - **Fixed filename format** — Exported files use generic names (rubric.pdf, rubric.docx) rather than role-specific names.
 
 ### Cost
