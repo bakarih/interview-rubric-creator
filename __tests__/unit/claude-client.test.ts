@@ -119,6 +119,26 @@ describe('generateCompletion', () => {
     );
   });
 
+  it('uses the explicitly provided model when one is specified', async () => {
+    const mockCreate = jest.fn().mockResolvedValue({
+      content: [{ type: 'text', text: 'response' }],
+    });
+
+    jest.mock('@anthropic-ai/sdk', () => ({
+      __esModule: true,
+      default: jest.fn().mockImplementation(() => ({
+        messages: { create: mockCreate },
+      })),
+    }));
+
+    const { generateCompletion } = await import('@/lib/claude/client');
+    await generateCompletion('sys', 'user', { model: 'claude-haiku-4-5-20251001' });
+
+    expect(mockCreate).toHaveBeenCalledWith(
+      expect.objectContaining({ model: 'claude-haiku-4-5-20251001' })
+    );
+  });
+
   it('uses default max_tokens of 4096 when none is provided', async () => {
     const mockCreate = jest.fn().mockResolvedValue({
       content: [{ type: 'text', text: 'response' }],
