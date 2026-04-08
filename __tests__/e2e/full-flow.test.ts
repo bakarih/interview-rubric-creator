@@ -19,6 +19,26 @@ import {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+/**
+ * Build an SSE response body that matches what /api/generate now streams.
+ * Emits one `signal` event per rubric signal, then a final `done` event.
+ */
+function buildGenerateSSEBody(rubric: typeof MOCK_RUBRIC): string {
+  return [
+    ...rubric.signals.map(
+      (signal) => `data: ${JSON.stringify({ type: 'signal', signal })}\n\n`,
+    ),
+    `data: ${JSON.stringify({
+      type: 'done',
+      id: rubric.id,
+      role: rubric.role,
+      level: rubric.level,
+      createdAt: rubric.createdAt,
+      version: rubric.version,
+    })}\n\n`,
+  ].join('');
+}
+
 /** Intercept all three pipeline API routes with deterministic mock responses. */
 async function mockPipelineRoutes(page: Page) {
   await page.route('**/api/extract', async (route) => {
@@ -32,8 +52,8 @@ async function mockPipelineRoutes(page: Page) {
   await page.route('**/api/generate', async (route) => {
     await route.fulfill({
       status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify(MOCK_RUBRIC),
+      contentType: 'text/event-stream',
+      body: buildGenerateSSEBody(MOCK_RUBRIC),
     });
   });
 }
@@ -183,12 +203,9 @@ test.describe('Full paste-text pipeline', () => {
     await page.getByPlaceholder('Paste your job description here...').fill(LONG_JD_TEXT);
     await page.getByRole('button', { name: 'Generate Rubric' }).click();
 
-    // At least one of the rotating loading messages should appear.
+    // The loading spinner should appear while extract is pending.
     await expect(
-      page
-        .getByText('Parsing document...')
-        .or(page.getByText('Extracting signals...'))
-        .or(page.getByText('Generating rubric...')),
+      page.getByText('Extracting signals from job description\u2026'),
     ).toBeVisible();
   });
 
@@ -301,10 +318,7 @@ test.describe('File upload pipeline', () => {
     // React batches setSelectedFile + setFlow('loading') together, so the page
     // immediately transitions to the loading spinner. Verify the spinner text.
     await expect(
-      page
-        .getByText('Parsing document...')
-        .or(page.getByText('Extracting signals...'))
-        .or(page.getByText('Generating rubric...')),
+      page.getByText('Extracting signals from job description\u2026'),
     ).toBeVisible();
 
     resolveParse!();
