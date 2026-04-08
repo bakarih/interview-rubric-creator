@@ -13,7 +13,11 @@ import { Rubric, JobDescription, Signal } from '@/types';
 type FlowState = 'input' | 'loading' | 'streaming' | 'result' | 'error';
 type TabId = 'upload' | 'paste';
 
-const TIMEOUT_MS = 30_000;
+// Haiku-backed extraction is fast; 30 s is generous.
+const EXTRACT_TIMEOUT_MS = 30_000;
+// Sonnet 4 streaming a full rubric (8192 max_tokens, 8-10 signals) can take
+// 40-70 s. 90 s gives it room without letting a true hang go forever.
+const GENERATE_TIMEOUT_MS = 90_000;
 
 export default function Home() {
   const router = useRouter();
@@ -56,7 +60,7 @@ export default function Home() {
     try {
       // Step 1: Extract — 30 s timeout
       const extractController = makeAbortController();
-      const extractTimeout = setTimeout(() => extractController.abort(), TIMEOUT_MS);
+      const extractTimeout = setTimeout(() => extractController.abort(), EXTRACT_TIMEOUT_MS);
 
       let extractRes: Response;
       try {
@@ -95,7 +99,7 @@ export default function Home() {
 
       // Step 2: Generate — 30 s timeout covers both the initial fetch and stream reading
       const generateController = makeAbortController();
-      const generateTimeout = setTimeout(() => generateController.abort(), TIMEOUT_MS);
+      const generateTimeout = setTimeout(() => generateController.abort(), GENERATE_TIMEOUT_MS);
 
       let generateRes: Response;
       let rubricId: string | null = null;

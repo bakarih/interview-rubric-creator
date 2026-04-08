@@ -10,7 +10,10 @@ export function getClaudeClient(): Anthropic {
       throw new Error('ANTHROPIC_API_KEY environment variable is not set');
     }
 
-    client = new Anthropic({ apiKey, timeout: 60_000 });
+    // 120 s gives Sonnet 4 room to stream a full rubric (8192 max_tokens)
+    // and must exceed the client-side generate AbortController timeout (90 s)
+    // so the server can emit the done event before the browser aborts.
+    client = new Anthropic({ apiKey, timeout: 120_000 });
   }
 
   return client;
