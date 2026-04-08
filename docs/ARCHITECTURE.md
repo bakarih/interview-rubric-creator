@@ -127,7 +127,7 @@ Each signal is streamed as an individual JSON object (one per line), with a fina
 ### React-Based Export System with Server-Side Document Generation
 The export system builds documents server-side using React components and native libraries:
 - **PDF**: @react-pdf/renderer with React.createElement for dynamic component generation
-- **DOCX**: docx library with Table/TableRow/TableCell components for structured layouts
+- **DOCX**: docx library with Document/Table/Paragraph components for structured layouts
 
 Both formats include:
 - Weighted signal ranking (sorted by importance)

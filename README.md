@@ -113,13 +113,12 @@ npm start
 - **Weighted rubric generation** — Each signal receives a weight (1–10), pass/fail criteria across three levels, a suggested assessment modality, and tailored interview questions
 - **Multiple input methods** — Upload PDF, DOCX, or TXT files, or paste text directly
 - **PDF and DOCX export** — Download formatted rubrics with color-coded criteria tables
-- **Real-time streaming** — Watch as signals are progressively generated and rendered
+- **Real-time streaming** — Watch as signals are progressively generated and rendered via Server-Sent Events
 - **Shareable URLs** — Each rubric gets a unique URL for easy sharing
 - **Dark/light mode** — Theme toggle with system preference detection and localStorage persistence
 - **WCAG 2.1 AA accessible** — Skip navigation, keyboard support, ARIA labels, focus management, reduced motion support
-- **100% test coverage** — Enforced across statements, branches, functions, and lines
-- **Auto-deploy** — Push to `main` triggers automatic deployment via App Runner
 - **Feedback system** — In-app feedback button linking to GitHub issues
+- **Client-side timeout handling** — Extraction (30s) and generation (90s) timeouts with user-friendly error messages
 
 ## Architecture
 
@@ -153,7 +152,6 @@ src/
 - **Server-Sent Events** — Rubric generation streams signals as they're created, providing immediate feedback during the 20-30s generation process.
 - **In-memory file processing** — Uploaded files are parsed in-memory and never persisted to disk or cloud storage.
 - **Zod validation everywhere** — All API inputs and Claude responses are validated at runtime, catching malformed data before it causes issues.
-- **SSE streaming for generation** — `/api/generate` uses the Anthropic streaming API and emits each rubric signal as an SSE event the moment it is ready. The client renders signals progressively rather than waiting for the full response, eliminating the blank-screen hang.
 - **AbortController timeouts** — Both pipeline fetch calls carry configurable client-side timeouts (30s for extraction, 90s for generation); the Anthropic SDK is configured with a 120s server-side timeout. Hangs surface as clear error messages instead of infinite spinners.
 - **Standalone Next.js output** — The build produces a self-contained server for containerized deployment.
 
