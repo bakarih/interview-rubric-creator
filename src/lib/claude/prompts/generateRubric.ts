@@ -27,8 +27,9 @@ Level: ${level}
 Signals to assess:
 ${signalsList}
 
-For each signal, output one JSON object per line (no wrapping array, no markdown):
-{"name":"string","description":"string","weight":number,"criteria":{"exceeds":"string","meets":"string","below":"string"},"suggestedModality":"string","suggestedQuestions":["string","string"]}
+For each signal, output one JSON object per line (no wrapping array, no markdown).
+weight must be an integer from 1 to 10 reflecting the signal's importance to job success.
+{"name":"string","description":"string","weight":1-10,"criteria":{"exceeds":"string","meets":"string","below":"string"},"suggestedModality":"string","suggestedQuestions":["string","string"]}
 
 One JSON object per line. No other text.`;
 }
