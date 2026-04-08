@@ -8,38 +8,25 @@ import LoadingSpinner from '@/components/common/LoadingSpinner';
 import ErrorMessage from '@/components/common/ErrorMessage';
 import RubricView from '@/components/rubric/RubricView';
 import ExportButtons from '@/components/export/ExportButtons';
-import { Rubric, JobDescription } from '@/types';
+import { Rubric, JobDescription, Signal } from '@/types';
 
-type FlowState = 'input' | 'loading' | 'result' | 'error';
+type FlowState = 'input' | 'loading' | 'streaming' | 'result' | 'error';
 type TabId = 'upload' | 'paste';
 
-const STATUS_MESSAGES = [
-  'Parsing document...',
-  'Extracting signals...',
-  'Generating rubric...',
-];
+const TIMEOUT_MS = 30_000;
 
 export default function Home() {
   const router = useRouter();
   const [flow, setFlow] = useState<FlowState>('input');
   const [activeTab, setActiveTab] = useState<TabId>('upload');
   const [pastedText, setPastedText] = useState('');
-  const [statusIndex, setStatusIndex] = useState(0);
   const [rubric, setRubric] = useState<Rubric | null>(null);
   const [errorMessage, setErrorMessage] = useState('');
   const mainRef = useRef<HTMLElement>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const signalsRef = useRef<Signal[]>([]);
 
-  // Compute before any conditional returns so TypeScript doesn't narrow flow
-  const isLoading = (flow as string) === 'loading';
-
-  // Cycle through status messages while loading
-  useEffect(() => {
-    if (flow !== 'loading') return;
-    const interval = setInterval(() => {
-      setStatusIndex((prev) => (prev + 1) % STATUS_MESSAGES.length);
-    }, 2500);
-    return () => clearInterval(interval);
-  }, [flow]);
+  const isLoading = flow === 'loading' || flow === 'streaming';
 
   // Focus management on flow state changes
   useEffect(() => {
@@ -48,17 +35,45 @@ export default function Home() {
     }
   }, [flow]);
 
+  // Abort any in-flight request on unmount
+  useEffect(() => {
+    return () => {
+      abortControllerRef.current?.abort();
+    };
+  }, []);
+
+  function makeAbortController(): AbortController {
+    abortControllerRef.current?.abort();
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+    return controller;
+  }
+
   async function runPipeline(text: string) {
     setFlow('loading');
-    setStatusIndex(0);
+    signalsRef.current = [];
 
     try {
-      // Step 1: Extract
-      const extractRes = await fetch('/api/extract', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text }),
-      });
+      // Step 1: Extract — 30 s timeout
+      const extractController = makeAbortController();
+      const extractTimeout = setTimeout(() => extractController.abort(), TIMEOUT_MS);
+
+      let extractRes: Response;
+      try {
+        extractRes = await fetch('/api/extract', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text }),
+          signal: extractController.signal,
+        });
+      } catch (err) {
+        if (err instanceof DOMException && err.name === 'AbortError') {
+          throw new Error('Signal extraction timed out. Please try again.');
+        }
+        throw err;
+      } finally {
+        clearTimeout(extractTimeout);
+      }
 
       if (!extractRes.ok) {
         const data = await extractRes.json().catch(() => ({}));
@@ -67,23 +82,108 @@ export default function Home() {
 
       const jd: JobDescription & { signals?: unknown[] } = await extractRes.json();
 
-      // Step 2: Generate
-      const generateRes = await fetch('/api/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          role: jd.role,
-          level: jd.level,
-          signals: jd.signals ?? [],
-        }),
+      // Seed a partial rubric so the streaming view has something to render immediately
+      setRubric({
+        id: 'pending',
+        role: jd.role,
+        level: jd.level,
+        signals: [],
+        createdAt: new Date().toISOString(),
+        version: '1.0.0',
       });
+      setFlow('streaming');
 
-      if (!generateRes.ok) {
-        const data = await generateRes.json().catch(() => ({}));
-        throw new Error((data as { error?: string }).error ?? 'Generation failed');
+      // Step 2: Generate — 30 s timeout covers both the initial fetch and stream reading
+      const generateController = makeAbortController();
+      const generateTimeout = setTimeout(() => generateController.abort(), TIMEOUT_MS);
+
+      let generateRes: Response;
+      let rubricId: string | null = null;
+      let rubricCreatedAt: string | null = null;
+
+      try {
+        try {
+          generateRes = await fetch('/api/generate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              role: jd.role,
+              level: jd.level,
+              signals: jd.signals ?? [],
+            }),
+            signal: generateController.signal,
+          });
+        } catch (err) {
+          if (err instanceof DOMException && err.name === 'AbortError') {
+            throw new Error('Rubric generation timed out. Please try again.');
+          }
+          throw err;
+        }
+
+        if (!generateRes.ok) {
+          const data = await generateRes.json().catch(() => ({}));
+          throw new Error((data as { error?: string }).error ?? 'Generation failed');
+        }
+
+        // Read SSE stream and progressively render signals
+        const reader = generateRes.body!.getReader();
+        const decoder = new TextDecoder();
+        let sseBuffer = '';
+
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            sseBuffer += decoder.decode(value, { stream: true });
+            const lines = sseBuffer.split('\n');
+            sseBuffer = lines.pop() ?? '';
+
+            for (const line of lines) {
+              if (!line.startsWith('data: ')) continue;
+              const eventData = JSON.parse(line.slice(6)) as {
+                type: string;
+                signal?: Signal;
+                id?: string;
+                createdAt?: string;
+                version?: string;
+                message?: string;
+              };
+
+              if (eventData.type === 'signal' && eventData.signal) {
+                signalsRef.current = [...signalsRef.current, eventData.signal];
+                const snapshot = signalsRef.current;
+                setRubric((prev) => (prev ? { ...prev, signals: snapshot } : prev));
+              } else if (eventData.type === 'done') {
+                rubricId = eventData.id ?? null;
+                rubricCreatedAt = eventData.createdAt ?? null;
+              } else if (eventData.type === 'error') {
+                throw new Error(eventData.message ?? 'Generation failed');
+              }
+            }
+          }
+        } catch (err) {
+          if (err instanceof DOMException && err.name === 'AbortError') {
+            throw new Error('Rubric generation timed out. Please try again.');
+          }
+          throw err;
+        }
+      } finally {
+        clearTimeout(generateTimeout);
       }
 
-      const generatedRubric: Rubric = await generateRes.json();
+      if (!rubricId) {
+        throw new Error('Generation failed: incomplete response from server');
+      }
+
+      const generatedRubric: Rubric = {
+        id: rubricId,
+        role: jd.role,
+        level: jd.level,
+        signals: signalsRef.current,
+        createdAt: rubricCreatedAt ?? new Date().toISOString(),
+        version: '1.0.0',
+      };
 
       // Save to localStorage
       const stored = JSON.parse(localStorage.getItem('rubrics') ?? '{}') as Record<string, Rubric>;
@@ -101,7 +201,6 @@ export default function Home() {
 
   async function handleFile(file: File) {
     setFlow('loading');
-    setStatusIndex(0);
 
     try {
       const formData = new FormData();
@@ -117,7 +216,7 @@ export default function Home() {
         throw new Error((data as { error?: string }).error ?? 'File parsing failed');
       }
 
-      const { text } = await parseRes.json() as { text: string };
+      const { text } = (await parseRes.json()) as { text: string };
       await runPipeline(text);
     } catch (err) {
       setErrorMessage(err instanceof Error ? err.message : 'An unexpected error occurred');
@@ -135,6 +234,9 @@ export default function Home() {
   }
 
   function handleReset() {
+    abortControllerRef.current?.abort();
+    abortControllerRef.current = null;
+    signalsRef.current = [];
     setFlow('input');
     setRubric(null);
     setErrorMessage('');
@@ -145,9 +247,47 @@ export default function Home() {
 
   if (flow === 'loading') {
     return (
-      <main id="main-content" ref={mainRef} tabIndex={-1} className="flex min-h-screen flex-col items-center justify-center bg-gray-50 dark:bg-gray-950 px-4 focus:outline-none">
+      <main
+        id="main-content"
+        ref={mainRef}
+        tabIndex={-1}
+        className="flex min-h-screen flex-col items-center justify-center bg-gray-50 dark:bg-gray-950 px-4 focus:outline-none"
+      >
         <div className="w-full max-w-md rounded-2xl bg-white dark:bg-gray-900 p-10 shadow-sm border border-gray-200 dark:border-gray-700 text-center">
-          <LoadingSpinner message={STATUS_MESSAGES[statusIndex]} />
+          <LoadingSpinner message="Extracting signals from job description…" />
+        </div>
+      </main>
+    );
+  }
+
+  if (flow === 'streaming' && rubric) {
+    return (
+      <main
+        id="main-content"
+        ref={mainRef}
+        tabIndex={-1}
+        className="min-h-screen bg-gray-50 dark:bg-gray-950 px-4 py-10 focus:outline-none"
+      >
+        <div className="mx-auto max-w-3xl space-y-6">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Interview Rubric</h1>
+            <button
+              onClick={handleReset}
+              className="rounded-lg border border-gray-300 dark:border-gray-600 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+          <div className="flex items-center gap-3 rounded-xl border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950 px-4 py-3 text-sm text-blue-700 dark:text-blue-300">
+            <div className="h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-blue-300 border-t-blue-600" aria-hidden="true" />
+            <span>
+              Generating rubric
+              {rubric.signals.length > 0
+                ? ` — ${rubric.signals.length} signal${rubric.signals.length !== 1 ? 's' : ''} so far`
+                : '…'}
+            </span>
+          </div>
+          {rubric.signals.length > 0 && <RubricView rubric={rubric} />}
         </div>
       </main>
     );
@@ -155,7 +295,12 @@ export default function Home() {
 
   if (flow === 'result' && rubric) {
     return (
-      <main id="main-content" ref={mainRef} tabIndex={-1} className="min-h-screen bg-gray-50 dark:bg-gray-950 px-4 py-10 focus:outline-none">
+      <main
+        id="main-content"
+        ref={mainRef}
+        tabIndex={-1}
+        className="min-h-screen bg-gray-50 dark:bg-gray-950 px-4 py-10 focus:outline-none"
+      >
         <div className="mx-auto max-w-3xl space-y-6">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Interview Rubric</h1>
@@ -177,7 +322,12 @@ export default function Home() {
 
   if (flow === 'error') {
     return (
-      <main id="main-content" ref={mainRef} tabIndex={-1} className="flex min-h-screen flex-col items-center justify-center bg-gray-50 dark:bg-gray-950 px-4 focus:outline-none">
+      <main
+        id="main-content"
+        ref={mainRef}
+        tabIndex={-1}
+        className="flex min-h-screen flex-col items-center justify-center bg-gray-50 dark:bg-gray-950 px-4 focus:outline-none"
+      >
         <div className="w-full max-w-md space-y-4">
           <ErrorMessage message={errorMessage} onRetry={handleReset} />
         </div>
@@ -190,7 +340,10 @@ export default function Home() {
   const canSubmit = charCount >= 100;
 
   return (
-    <main id="main-content" className="flex min-h-screen flex-col items-center justify-center bg-gray-50 dark:bg-gray-950 px-4 py-12">
+    <main
+      id="main-content"
+      className="flex min-h-screen flex-col items-center justify-center bg-gray-50 dark:bg-gray-950 px-4 py-12"
+    >
       <div className="w-full max-w-xl space-y-6">
         {/* Hero */}
         <div className="text-center">
@@ -205,7 +358,11 @@ export default function Home() {
         {/* Card */}
         <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6 shadow-sm">
           {/* Tabs */}
-          <div className="mb-6 flex rounded-lg border border-gray-200 dark:border-gray-700 p-1 bg-gray-50 dark:bg-gray-800" role="tablist" aria-label="Input method">
+          <div
+            className="mb-6 flex rounded-lg border border-gray-200 dark:border-gray-700 p-1 bg-gray-50 dark:bg-gray-800"
+            role="tablist"
+            aria-label="Input method"
+          >
             {(['upload', 'paste'] as TabId[]).map((tab) => (
               <button
                 key={tab}
@@ -233,11 +390,7 @@ export default function Home() {
             </div>
           ) : (
             <div role="tabpanel" id="tabpanel-paste" aria-labelledby="tab-paste" className="space-y-4">
-              <TextInput
-                value={pastedText}
-                onChange={setPastedText}
-                disabled={isLoading}
-              />
+              <TextInput value={pastedText} onChange={setPastedText} disabled={isLoading} />
               <div className="space-y-1">
                 <button
                   onClick={handleTextSubmit}

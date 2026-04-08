@@ -10,7 +10,7 @@ export function getClaudeClient(): Anthropic {
       throw new Error('ANTHROPIC_API_KEY environment variable is not set');
     }
 
-    client = new Anthropic({ apiKey });
+    client = new Anthropic({ apiKey, timeout: 60_000 });
   }
 
   return client;

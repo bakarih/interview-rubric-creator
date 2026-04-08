@@ -8,7 +8,7 @@ Your rubrics follow authentic assessment principles:
 3. Weights reflect the signal's importance to job success
 4. Questions are specific and behavioral/situational
 
-You must respond with valid JSON only. No additional text.`;
+Output one JSON object per line — no wrapping array, no markdown fences, no extra text. Each line must be a complete, parseable JSON object for exactly one signal.`;
 
 export function buildGenerateRubricUserMessage(
   role: string,
@@ -27,28 +27,8 @@ Level: ${level}
 Signals to assess:
 ${signalsList}
 
-For each signal, provide:
-1. A weight (1-10) based on importance
-2. Clear criteria for "exceeds", "meets", and "below" expectations
-3. A suggested assessment modality (one of: pair_programming, system_design, code_review, behavioral, take_home, technical_discussion, presentation, case_study)
-4. 2-3 suggested interview questions
+For each signal, output one JSON object per line (no wrapping array, no markdown):
+{"name":"string","description":"string","weight":number,"criteria":{"exceeds":"string","meets":"string","below":"string"},"suggestedModality":"string","suggestedQuestions":["string","string"]}
 
-Respond with valid JSON:
-{
-  "signals": [
-    {
-      "id": "uuid",
-      "name": "string",
-      "description": "string",
-      "weight": number,
-      "criteria": {
-        "exceeds": "string",
-        "meets": "string",
-        "below": "string"
-      },
-      "suggestedModality": "string",
-      "suggestedQuestions": ["string"]
-    }
-  ]
-}`;
+One JSON object per line. No other text.`;
 }

@@ -39,7 +39,7 @@ describe('getClaudeClient', () => {
     const { getClaudeClient } = await import('@/lib/claude/client');
     const result = getClaudeClient();
 
-    expect(MockAnthropic).toHaveBeenCalledWith({ apiKey: 'test-api-key' });
+    expect(MockAnthropic).toHaveBeenCalledWith(expect.objectContaining({ apiKey: 'test-api-key' }));
     expect(result).toBe(mockInstance);
   });
 
