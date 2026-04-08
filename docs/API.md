@@ -108,7 +108,7 @@ Takes extracted signals and generates a complete weighted interview rubric using
 
 **Response (200):**
 
-Returns a Server-Sent Events stream. Each event contains JSON data:
+Returns a Server-Sent Events stream with 30-second timeout. Each event contains JSON data:
 
 **Signal Event:**
 ```json
@@ -165,7 +165,7 @@ Returns a Server-Sent Events stream. Each event contains JSON data:
 | Status | Reason |
 |--------|--------|
 | 400 | Missing required fields: role, level, or signals |
-| 500 | Claude API error or response parsing failure |
+| 500 | Claude API error, timeout (30s), or response parsing failure |
 
 ---
 

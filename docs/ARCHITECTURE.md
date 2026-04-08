@@ -80,7 +80,9 @@ src/
 ├── lib/
 │   ├── claude/
 │   │   ├── client.ts             # Anthropic SDK singleton with completion wrapper
+│   │   ├── index.ts              # Re-exports from client and prompts
 │   │   └── prompts/
+│   │       ├── index.ts          # Re-exports from all prompt files
 │   │       ├── extractJD.ts      # System prompt for JD extraction
 │   │       └── generateRubric.ts # System prompt for rubric generation
 │   ├── parsers/
@@ -89,6 +91,7 @@ src/
 │   │   ├── docxParser.ts         # mammoth wrapper
 │   │   └── txtParser.ts          # Buffer.toString()
 │   └── validation/
+│       ├── index.ts              # Re-exports from schemas
 │       └── schemas.ts            # All Zod schemas
 └── types/
     ├── index.ts                  # Type exports
