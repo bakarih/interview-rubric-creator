@@ -94,7 +94,7 @@ Sends raw text to Claude AI to extract a structured job description with hiring 
 
 ## POST /api/generate
 
-Takes extracted signals and generates a complete weighted interview rubric using Claude AI.
+Takes extracted signals and generates a complete weighted interview rubric using Claude AI via Server-Sent Events (SSE).
 
 **Content-Type:** `application/json`
 
@@ -108,33 +108,55 @@ Takes extracted signals and generates a complete weighted interview rubric using
 
 **Response (200):**
 
+Returns a Server-Sent Events stream with 30-second timeout. Each event contains JSON data:
+
+**Signal Event:**
 ```json
 {
+  "type": "signal",
+  "signal": {
+    "id": "6ba7b810-9dad-11d1-80b4-00c04fd430c8",
+    "name": "API Design",
+    "description": "Ability to design clean, scalable, and well-documented APIs",
+    "weight": 9,
+    "criteria": {
+      "exceeds": "Designs APIs that handle edge cases elegantly, include versioning strategy, and come with comprehensive documentation",
+      "meets": "Designs functional APIs with clear endpoints, proper error handling, and basic documentation",
+      "below": "APIs lack consistency, miss common edge cases, or have unclear contracts"
+    },
+    "suggestedModality": "system_design",
+    "suggestedQuestions": [
+      "Walk me through how you would design an API for a payment processing system. What tradeoffs would you consider?",
+      "Tell me about a time you had to evolve an API without breaking existing consumers."
+    ]
+  }
+}
+```
+
+**Completion Event:**
+```json
+{
+  "type": "done",
   "id": "550e8400-e29b-41d4-a716-446655440000",
   "role": "Senior Backend Engineer",
   "level": "senior",
-  "signals": [
-    {
-      "id": "6ba7b810-9dad-11d1-80b4-00c04fd430c8",
-      "name": "API Design",
-      "description": "Ability to design clean, scalable, and well-documented APIs",
-      "weight": 9,
-      "criteria": {
-        "exceeds": "Designs APIs that handle edge cases elegantly, include versioning strategy, and come with comprehensive documentation",
-        "meets": "Designs functional APIs with clear endpoints, proper error handling, and basic documentation",
-        "below": "APIs lack consistency, miss common edge cases, or have unclear contracts"
-      },
-      "suggestedModality": "system_design",
-      "suggestedQuestions": [
-        "Walk me through how you would design an API for a payment processing system. What tradeoffs would you consider?",
-        "Tell me about a time you had to evolve an API without breaking existing consumers."
-      ]
-    }
-  ],
   "createdAt": "2026-03-21T04:00:00.000Z",
   "version": "1.0.0"
 }
 ```
+
+**Error Event:**
+```json
+{
+  "type": "error",
+  "message": "Failed to generate rubric"
+}
+```
+
+**Response Headers:**
+- `Content-Type: text/event-stream`
+- `Cache-Control: no-cache`
+- `Connection: keep-alive`
 
 **Assessment Modalities:** `pair_programming`, `system_design`, `code_review`, `behavioral`, `take_home`, `technical_discussion`, `presentation`, `case_study`
 
@@ -143,7 +165,7 @@ Takes extracted signals and generates a complete weighted interview rubric using
 | Status | Reason |
 |--------|--------|
 | 400 | Missing required fields: role, level, or signals |
-| 500 | Claude API error or response parsing failure |
+| 500 | Claude API error, timeout (30s), or response parsing failure |
 
 ---
 

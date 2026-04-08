@@ -23,7 +23,7 @@ From the extracted signals, Claude generates a complete interview rubric where e
 - **Weight (1–10)** — Relative importance for the hiring decision
 - **Three-tier criteria** — Specific, observable descriptions for exceeds / meets / below expectations
 - **Assessment modality** — The recommended interview format: pair_programming, system_design, code_review, behavioral, take_home, technical_discussion, presentation, or case_study
-- **Interview questions** — 2–3 tailored behavioral or situational questions (capped at 5 per signal)
+- **Interview questions** — 1–5 tailored behavioral or situational questions per signal
 
 ### Export
 - **PDF** — Formatted A4 document with proper table structure, color-coded criteria labels (green for exceeds, blue for meets, orange for below), numbered signals sorted by weight, and comprehensive accessibility support using React PDF
@@ -33,9 +33,10 @@ From the extracted signals, Claude generates a complete interview rubric where e
 ### User Experience
 - **Dark and light mode** — Toggle with system preference detection, persisted across sessions
 - **Drag-and-drop upload** — Visual feedback on drag state with keyboard navigation support
+- **Real-time streaming** — Progressive display of signals as they're generated via Server-Sent Events (SSE)
 - **Keyboard navigation** — Full keyboard support throughout the interface including skip-to-content navigation
-- **Loading states** — Rotating status messages during AI processing ("Parsing document...", "Extracting signals...", "Generating rubric...")
-- **Error handling** — Clear error messages with retry functionality
+- **Loading states** — Visual feedback during processing with cancel functionality for long-running operations
+- **Error handling** — Clear error messages with retry functionality and 30-second timeouts for API requests
 - **URL-based navigation** — Direct links to individual rubrics (`/rubric/[id]`) with shareable URLs and proper state management
 
 ### Accessibility (WCAG 2.1 AA)
@@ -105,12 +106,16 @@ The application uses **Claude Haiku 4** (`claude-haiku-4-5-20251001`) for extrac
 - **PDF styling** — The PDF export uses a fixed A4 layout with React PDF rendering. Very long signal names or criteria text may wrap awkwardly.
 - **DOCX formatting** — Uses docx library with borderless tables and color-coded cell backgrounds. Complex formatting may not render identically across all Word processors.
 - **No Google Docs integration** — DOCX files can be opened in Google Docs, but there is no direct Google Docs API integration.
-- **No edit-and-re-export** — Rubrics cannot be edited in the browser and re-exported. To make changes, you would need to edit the exported document directly.
 - **Fixed filename format** — Exported files use generic names (rubric.pdf, rubric.docx) rather than role-specific names.
 
 ### Cost
 - **API usage** — Each job description processed makes two API calls: one to Claude Haiku 4 for extraction and one to Claude Sonnet 4 for generation. At current pricing, expect roughly $0.01–0.05 per rubric depending on JD length.
 - **Hosting** — The application runs on a Next.js architecture with server-side API routes.
+
+### Performance
+- **30-second timeouts** — Both extraction and generation phases have 30-second timeouts. Complex job descriptions or API latency may occasionally trigger timeouts.
+- **Request cancellation** — Users can cancel in-flight requests, but this aborts the entire pipeline and requires starting over.
+- **No retry logic** — Failed requests require manual retry by the user.
 
 ---
 
