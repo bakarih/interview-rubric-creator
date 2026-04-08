@@ -96,6 +96,19 @@ beforeEach(() => {
 // ---------------------------------------------------------------------------
 
 describe('POST /api/generate — validation', () => {
+  it('returns 400 when request body is not valid JSON', async () => {
+    const request = new NextRequest('http://localhost/api/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: 'this is not valid json {{{',
+    });
+    const response = await POST(request);
+
+    expect(response.status).toBe(400);
+    const body = await response.json();
+    expect(body.error).toBe('Invalid request body');
+  });
+
   it('returns 400 when role is missing', async () => {
     const request = makeRequest({ level: 'senior', signals: validSignals });
     const response = await POST(request);
@@ -269,6 +282,38 @@ describe('POST /api/generate — streaming', () => {
 
     // Only the valid line should produce a signal
     expect(signalEvents).toHaveLength(1);
+  });
+
+  it('ignores non-text-delta chunk types emitted by the Anthropic stream', async () => {
+    // Real Anthropic streams emit message_start, content_block_start, etc.
+    // alongside content_block_delta events. Only text_delta chunks should
+    // contribute to the line buffer; everything else must be silently ignored.
+    const mockMessages = {
+      stream: jest.fn().mockReturnValue({
+        async *[Symbol.asyncIterator]() {
+          yield { type: 'message_start', message: {} };
+          yield { type: 'content_block_start', index: 0, content_block: { type: 'text' } };
+          yield { type: 'content_block_delta', delta: { type: 'text_delta', text: signalLine + '\n' } };
+          yield { type: 'content_block_stop', index: 0 };
+          yield { type: 'message_delta', delta: { stop_reason: 'end_turn' } };
+          yield { type: 'message_stop' };
+        },
+      }),
+    };
+    mockGetClaudeClient.mockReturnValue({
+      messages: mockMessages,
+    } as unknown as ReturnType<typeof getClaudeClient>);
+
+    const response = await POST(
+      makeRequest({ role: 'Software Engineer', level: 'senior', signals: validSignals })
+    );
+
+    const events = await readSSEEvents(response);
+    const signalEvents = events.filter((e) => e.type === 'signal');
+
+    // Only the one text_delta chunk should produce a signal
+    expect(signalEvents).toHaveLength(1);
+    expect(signalEvents[0].signal).toMatchObject({ name: 'React proficiency' });
   });
 
   it('silently skips markdown fence lines', async () => {
