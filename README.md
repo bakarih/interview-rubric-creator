@@ -113,6 +113,7 @@ npm start
 - **Weighted rubric generation** — Each signal receives a weight (1–10), pass/fail criteria across three levels, a suggested assessment modality, and tailored interview questions
 - **Multiple input methods** — Upload PDF, DOCX, or TXT files, or paste text directly
 - **PDF and DOCX export** — Download formatted rubrics with color-coded criteria tables
+- **Real-time streaming** — Watch as signals are progressively generated and rendered
 - **Shareable URLs** — Each rubric gets a unique URL for easy sharing
 - **Dark/light mode** — Theme toggle with system preference detection and localStorage persistence
 - **WCAG 2.1 AA accessible** — Skip navigation, keyboard support, ARIA labels, focus management, reduced motion support
@@ -128,7 +129,7 @@ src/
 │   ├── api/
 │   │   ├── parse/              # File text extraction
 │   │   ├── extract/            # Claude: JD → structured signals
-│   │   ├── generate/           # Claude: signals → weighted rubric
+│   │   ├── generate/           # Claude: signals → weighted rubric (SSE stream)
 │   │   └── export/             # Rubric → PDF/DOCX binary
 │   ├── rubric/[id]/            # Dynamic rubric view page
 │   ├── page.tsx                # Home page (upload/paste)
@@ -149,6 +150,7 @@ src/
 ### Key Design Decisions
 
 - **Stateless API** — No database; rubrics are stored client-side in localStorage. This keeps infrastructure simple and costs low.
+- **Server-Sent Events** — Rubric generation streams signals as they're created, providing immediate feedback during the 20-30s generation process.
 - **In-memory file processing** — Uploaded files are parsed in-memory and never persisted to disk or cloud storage.
 - **Zod validation everywhere** — All API inputs and Claude responses are validated at runtime, catching malformed data before it causes issues.
 - **Standalone Next.js output** — The build produces a self-contained server for containerized deployment.
@@ -173,10 +175,10 @@ Analyzes job description text and extracts structured information.
 
 ### POST /api/generate
 
-Transforms extracted signals into a complete interview rubric.
+Transforms extracted signals into a complete interview rubric via Server-Sent Events.
 
 **Request**: `{ role: string, level: string, signals: ExtractedSignal[] }`  
-**Response**: Complete rubric with weighted signals, criteria, and questions  
+**Response**: SSE stream with `data: {"type": "signal", "signal": Signal}` events  
 **AI Model**: Claude Sonnet 4
 
 ### POST /api/export
