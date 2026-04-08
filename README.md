@@ -154,7 +154,7 @@ src/
 - **In-memory file processing** — Uploaded files are parsed in-memory and never persisted to disk or cloud storage.
 - **Zod validation everywhere** — All API inputs and Claude responses are validated at runtime, catching malformed data before it causes issues.
 - **SSE streaming for generation** — `/api/generate` uses the Anthropic streaming API and emits each rubric signal as an SSE event the moment it is ready. The client renders signals progressively rather than waiting for the full response, eliminating the blank-screen hang.
-- **AbortController timeouts** — Both pipeline fetch calls carry a 30 s client-side timeout; the Anthropic SDK is configured with a 60 s server-side timeout. Hangs surface as clear error messages instead of infinite spinners.
+- **AbortController timeouts** — Extract carries a 30 s client-side timeout (Haiku is fast). Generate carries a 90 s client-side timeout to accommodate Sonnet 4 streaming a full rubric; the Anthropic SDK is configured with a 120 s server-side timeout (must exceed the client timeout so the server always emits the `done` event before the browser aborts). Hangs surface as clear error messages instead of infinite spinners.
 - **Standalone Next.js output** — The build produces a self-contained server for containerized deployment.
 
 ## API Reference
