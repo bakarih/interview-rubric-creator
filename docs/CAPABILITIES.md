@@ -26,8 +26,8 @@ From the extracted signals, Claude generates a complete interview rubric where e
 - **Interview questions** — 1–5 tailored behavioral or situational questions per signal
 
 ### Export
-- **PDF** — Formatted A4 document with proper table structure, color-coded criteria labels (green for exceeds, blue for meets, orange for below), numbered signals sorted by weight, and comprehensive accessibility support using React PDF
-- **DOCX** — Structured Word document with proper heading hierarchy, color-coded table cells with background shading, borderless tables for clean formatting, and full Google Docs compatibility using the docx library
+- **PDF** — A4-formatted document with React PDF rendering, color-coded criteria labels (green for exceeds, blue for meets, orange for below), numbered signals sorted by weight, and structured layout with proper typography
+- **DOCX** — Word document generated using the docx library with borderless tables, color-coded cell backgrounds (green/blue/orange shading), proper heading hierarchy, and full Google Docs compatibility
 - **Fixed filenames** — Exports use standardized names (rubric.pdf, rubric.docx)
 
 ### User Experience
@@ -36,7 +36,7 @@ From the extracted signals, Claude generates a complete interview rubric where e
 - **Real-time streaming** — Progressive display of signals as they're generated via Server-Sent Events (SSE)
 - **Keyboard navigation** — Full keyboard support throughout the interface including skip-to-content navigation
 - **Loading states** — Visual feedback during processing with cancel functionality for long-running operations
-- **Error handling** — Clear error messages with retry functionality and 30-second timeouts for API requests
+- **Error handling** — Clear error messages with retry functionality and automatic timeouts (30s for extraction, 90s for generation)
 - **URL-based navigation** — Direct links to individual rubrics (`/rubric/[id]`) with shareable URLs and proper state management
 
 ### Accessibility (WCAG 2.1 AA)
@@ -113,9 +113,10 @@ The application uses **Claude Haiku 4** (`claude-haiku-4-5-20251001`) for extrac
 - **Hosting** — The application runs on a Next.js architecture with server-side API routes.
 
 ### Performance
-- **30-second timeouts** — Both extraction and generation phases have 30-second timeouts. Complex job descriptions or API latency may occasionally trigger timeouts.
+- **Timeouts** — Extraction has a 30-second timeout, generation has a 90-second timeout. Complex job descriptions or API latency may occasionally trigger timeouts.
 - **Request cancellation** — Users can cancel in-flight requests, but this aborts the entire pipeline and requires starting over.
 - **No retry logic** — Failed requests require manual retry by the user.
+- **120-second server timeout** — The Anthropic client has a 120-second timeout that exceeds the client-side timeout to ensure proper stream completion.
 
 ---
 
