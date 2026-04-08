@@ -96,6 +96,19 @@ beforeEach(() => {
 // ---------------------------------------------------------------------------
 
 describe('POST /api/generate — validation', () => {
+  it('returns 400 when request body is not valid JSON', async () => {
+    const request = new NextRequest('http://localhost/api/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: 'this is not valid json {{{',
+    });
+    const response = await POST(request);
+
+    expect(response.status).toBe(400);
+    const body = await response.json();
+    expect(body.error).toBe('Invalid request body');
+  });
+
   it('returns 400 when role is missing', async () => {
     const request = makeRequest({ level: 'senior', signals: validSignals });
     const response = await POST(request);
