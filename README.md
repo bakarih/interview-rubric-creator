@@ -38,7 +38,7 @@ An AI-powered web application that transforms job descriptions into structured, 
 1. **Input** — Upload a PDF, DOCX, or TXT file, or paste the job description text directly
 2. **Parse** — The server extracts raw text from uploaded files
 3. **Extract** — Claude analyzes the text and identifies the role, seniority level, and 5–10 key hiring signals
-4. **Generate** — Claude builds a complete rubric: each signal gets a weight (1–10), criteria for exceeds/meets/below expectations, a suggested assessment modality, and 2–3 interview questions
+4. **Generate** — Claude builds a complete rubric and streams it back signal-by-signal via SSE. Each signal appears in the UI as it is generated — no waiting for the full response. Each signal gets a weight (1–10), criteria for exceeds/meets/below expectations, a suggested assessment modality, and 2–3 interview questions
 5. **Export** — Download the rubric as a formatted PDF or DOCX document
 
 ## Getting Started
@@ -95,7 +95,7 @@ npm start
 
 | Layer | Technology | Purpose |
 |-------|-----------|---------|
-| Framework | [Next.js 15](https://nextjs.org/) (App Router) | Full-stack React framework with SSR |
+| Framework | [Next.js 16](https://nextjs.org/) (App Router) | Full-stack React framework with SSR |
 | Language | [TypeScript 5](https://www.typescriptlang.org/) | Type safety across the codebase |
 | AI | [Claude Sonnet 4 & Haiku 4](https://docs.anthropic.com/) via Anthropic SDK | Job description analysis and rubric generation |
 | Styling | [Tailwind CSS](https://tailwindcss.com/) with Geist fonts | Utility-first CSS with dark mode support |
@@ -153,6 +153,8 @@ src/
 - **Server-Sent Events** — Rubric generation streams signals as they're created, providing immediate feedback during the 20-30s generation process.
 - **In-memory file processing** — Uploaded files are parsed in-memory and never persisted to disk or cloud storage.
 - **Zod validation everywhere** — All API inputs and Claude responses are validated at runtime, catching malformed data before it causes issues.
+- **SSE streaming for generation** — `/api/generate` uses the Anthropic streaming API and emits each rubric signal as an SSE event the moment it is ready. The client renders signals progressively rather than waiting for the full response, eliminating the blank-screen hang.
+- **AbortController timeouts** — Both pipeline fetch calls carry a 30 s client-side timeout; the Anthropic SDK is configured with a 60 s server-side timeout. Hangs surface as clear error messages instead of infinite spinners.
 - **Standalone Next.js output** — The build produces a self-contained server for containerized deployment.
 
 ## API Reference
