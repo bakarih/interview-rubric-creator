@@ -4,57 +4,57 @@ An AI-powered web application that transforms job descriptions into structured, 
 
 ## How It Works
 
+The app supports two generation pipelines, toggled by a feature flag:
+
+### Inline Pipeline (default)
+
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                          User Interface                                │
-│                                                                        │
 │   ┌──────────────┐    ┌──────────────┐    ┌──────────────────────────┐ │
 │   │ Upload File   │    │  Paste Text  │    │  View & Export Rubric    │ │
 │   │ (PDF/DOCX/TXT)│    │              │    │  (PDF / DOCX download)   │ │
 │   └──────┬───────┘    └──────┬───────┘    └────────────▲─────────────┘ │
-│          │                   │                         │               │
 └──────────┼───────────────────┼─────────────────────────┼───────────────┘
-           │                   │                         │
            ▼                   ▼                         │
     ┌─────────────┐    ┌─────────────┐                   │
-    │  /api/parse  │    │             │                   │
-    │  Extract raw │───▶│ /api/extract│                   │
-    │  text from   │    │  Claude AI  │                   │
-    │  file        │    │  identifies │                   │
+    │  /api/parse  │───▶│ /api/extract│                   │
+    │  Extract raw │    │  Claude AI  │                   │
+    │  text        │    │  identifies │                   │
     └─────────────┘    │  role, level,│                   │
                        │  signals    │                   │
                        └──────┬──────┘                   │
-                              │                          │
                               ▼                          │
                        ┌─────────────┐           ┌──────┴──────┐
                        │/api/generate │           │ /api/export  │
-                       │  Claude AI   │──────────▶│  PDF or DOCX │
-                       │  creates     │  Rubric   │  generation  │
-                       │  weighted    │  stored   └──────────────┘
-                       │  rubric      │  client-
-                       └─────────────┘  side
+                       │  Claude SSE  │──────────▶│  PDF / DOCX  │
+                       │  streams     │  stored   └──────────────┘
+                       │  rubric      │  client-side
+                       └─────────────┘
 ```
 
 1. **Input** — Upload a PDF, DOCX, or TXT file, or paste the job description text directly
 2. **Parse** — The server extracts raw text from uploaded files
-3. **Extract** — Claude analyzes the text and identifies the role, seniority level, and 5–10 key hiring signals
-4. **Generate** — Claude builds a complete rubric and streams it back signal-by-signal via SSE (or through async pipeline). Each signal appears in the UI as it is generated. Each signal gets a weight (1–10), criteria for exceeds/meets/below expectations, a suggested assessment modality, and 2–3 interview questions
+3. **Extract** — Claude Haiku analyzes the text and identifies the role, seniority level, and 5–10 key hiring signals (30s timeout)
+4. **Generate** — Claude Sonnet streams the rubric back signal-by-signal via SSE (90s timeout). Each signal gets a weight (1–10), criteria for exceeds/meets/below expectations, a suggested assessment modality, and 2–3 interview questions
 5. **Export** — Download the rubric as a formatted PDF or DOCX document
 
-## Architecture
+### Async Pipeline (Cloudflare Queues + R2, feature-flagged)
 
-The app supports two processing pipelines:
+When `NEXT_PUBLIC_USE_ASYNC_PIPELINE=true`, the app routes generation through a two-Worker Cloudflare architecture. The JD is enqueued and processed asynchronously — the UI polls for completion while the Consumer Worker runs the Claude pipeline and writes results to R2.
 
-### Inline Pipeline (Default)
-- **Extract** (30s timeout): `/api/extract` → Claude Haiku 4 identifies signals
-- **Generate** (90s timeout): `/api/generate` → Claude Sonnet 4 streams rubric via SSE
-- Real-time signal rendering as they're generated
+```
+Browser → Next.js /api/jobs → Producer Worker → Queue rubric-jobs → Consumer Worker → Claude → R2
+   ▲                ▲                                                                         │
+   └── poll status ─┴─────────────────── reads from R2 ────────────────────────────────────────┘
+```
 
-### Async Pipeline (Optional)
-- **Submit**: `/api/jobs` → enqueue job via Cloudflare producer Worker
-- **Poll**: `/api/jobs/:jobId` → status updates until completion
-- Powered by Cloudflare Queues + R2 storage
-- Enabled with `NEXT_PUBLIC_USE_ASYNC_PIPELINE=true`
+- **Producer Worker** — HTTP edge layer. Writes status to R2, enqueues message, returns `jobId` in <1.5s.
+- **Consumer Worker** — Queue-triggered. Runs two-stage Claude pipeline (Haiku extract → Sonnet generate), writes rubric to R2.
+- **DLQ** — `rubric-jobs-dlq` with `max_retries: 3` and exponential backoff.
+- **Idempotency** — Consumer checks `R2.head(result key)` before calling Claude; duplicate deliveries are safely skipped.
+
+See [`workers/README.md`](./workers/README.md) for deployment instructions and [`workers/ADR.md`](./workers/ADR.md) for the full architecture decisions record (11 ADRs).
 
 ## Getting Started
 
@@ -66,14 +66,9 @@ The app supports two processing pipelines:
 ### Installation
 
 ```bash
-# Clone the repository
 git clone https://github.com/bakarih/interview-rubric-creator.git
 cd interview-rubric-creator
-
-# Install dependencies
 npm install
-
-# Set up environment variables
 cp .env.example .env.local
 ```
 
@@ -121,6 +116,7 @@ npm start
 | IDs | [uuid](https://www.npmjs.com/package/uuid) | Unique identifier generation |
 | Testing | [Jest](https://jestjs.io/), [Testing Library](https://testing-library.com/), [Playwright](https://playwright.dev/) | Unit, integration, and E2E testing |
 | Hosting | [AWS App Runner](https://aws.amazon.com/apprunner/) | Production deployment with auto-deploy from GitHub |
+| Async Pipeline | [Cloudflare Workers](https://workers.cloudflare.com/), [Queues](https://developers.cloudflare.com/queues/), [R2](https://developers.cloudflare.com/r2/) | Feature-flagged async generation pipeline |
 
 ## Features
 
@@ -128,8 +124,8 @@ npm start
 - **Weighted rubric generation** — Each signal receives a weight (1–10), pass/fail criteria across three levels, a suggested assessment modality, and tailored interview questions
 - **Multiple input methods** — Upload PDF, DOCX, or TXT files, or paste text directly
 - **PDF and DOCX export** — Download formatted rubrics with color-coded criteria tables
-- **Real-time streaming** — Watch as signals are progressively generated and rendered via Server-Sent Events
-- **Async pipeline support** — Optional Cloudflare Queues + R2 backend for high availability
+- **Real-time streaming** — Watch as signals are progressively generated and rendered via Server-Sent Events (inline pipeline)
+- **Async pipeline** — Cloudflare Queues + R2 architecture for durable, retry-safe generation (feature-flagged)
 - **Shareable URLs** — Each rubric gets a unique URL for easy sharing
 - **Dark/light mode** — Theme toggle with system preference detection and localStorage persistence
 - **WCAG 2.1 AA accessible** — Skip navigation, keyboard support, ARIA labels, focus management, reduced motion support
@@ -146,9 +142,10 @@ src/
 │   │   ├── extract/            # Claude: JD → structured signals
 │   │   ├── generate/           # Claude: signals → weighted rubric (SSE stream)
 │   │   ├── export/             # Rubric → PDF/DOCX binary
-│   │   └── jobs/               # Async pipeline proxy endpoints
+│   │   └── jobs/               # Proxy to Cloudflare producer Worker (async pipeline)
+│   │       └── [jobId]/        # Poll job status from producer Worker
 │   ├── rubric/[id]/            # Dynamic rubric view page
-│   ├── page.tsx                # Home page (upload/paste)
+│   ├── page.tsx                # Home page — feature-flag routes to inline or async flow
 │   ├── layout.tsx              # Root layout with theme support
 │   └── globals.css             # Tailwind styles
 ├── components/
@@ -159,77 +156,64 @@ src/
 ├── lib/
 │   ├── claude/                 # Anthropic client + prompt templates
 │   ├── parsers/                # PDF, DOCX, TXT parsers
-│   ├── utils/                  # asyncPipeline utilities
+│   ├── utils/
+│   │   └── asyncPipeline.ts    # Client polling utility (AbortSignal, 2s interval, 90s timeout)
 │   └── validation/             # Zod schemas
-└── types/                      # TypeScript interfaces (Rubric, Signal, JD)
+├── types/                      # TypeScript interfaces (Rubric, Signal, JD)
+└── workers/                    # Cloudflare Workers async pipeline
+    ├── producer/               # HTTP edge Worker — accepts jobs, enqueues, exposes status
+    ├── consumer/               # Queue-triggered Worker — runs Claude pipeline, writes to R2
+    ├── shared/                 # Shared types (message contract, R2 key conventions)
+    ├── README.md               # Workers deployment guide
+    └── ADR.md                  # 11 Architecture Decisions Records
 ```
 
 ### Key Design Decisions
 
+- **Two pipelines, one feature flag** — `NEXT_PUBLIC_USE_ASYNC_PIPELINE` toggles between inline SSE streaming and the Cloudflare async pipeline. Both paths share the same `Rubric` output type; downstream components are unchanged.
 - **Stateless API** — No database; rubrics are stored client-side in localStorage. This keeps infrastructure simple and costs low.
-- **Server-Sent Events** — Rubric generation streams signals as they're created, providing immediate feedback during the 20-30s generation process.
+- **Server-Sent Events** — The inline pipeline streams signals as they're created, providing immediate feedback during the 20–30s generation process.
+- **Async pipeline durability** — Cloudflare Queues provides at-least-once delivery with DLQ after 3 retries. The consumer uses `R2.head()` for idempotency — duplicate deliveries skip the Claude call and ack cleanly.
+- **Status-before-enqueue** — The producer writes `status: queued` to R2 before sending to the queue, eliminating the race where a client polls before status exists.
 - **In-memory file processing** — Uploaded files are parsed in-memory and never persisted to disk or cloud storage.
 - **Zod validation everywhere** — All API inputs and Claude responses are validated at runtime, catching malformed data before it causes issues.
 - **AbortController timeouts** — Both pipeline fetch calls carry configurable client-side timeouts (30s for extraction, 90s for generation); the Anthropic SDK is configured with a 120s server-side timeout.
-- **Dual pipeline support** — Inline SSE streaming for development/low-scale, async Cloudflare pipeline for production scaling.
 - **Standalone Next.js output** — The build produces a self-contained server for containerized deployment.
 
 ## API Reference
 
 ### POST /api/parse
-
 Extracts text content from uploaded files.
-
-**Request**: `multipart/form-data` with a `file` field  
-**Response**: `{ text: string }`  
-**Supported formats**: PDF, DOCX, TXT (max 5MB)
+**Request**: `multipart/form-data` with a `file` field | **Response**: `{ text: string }` | **Supported**: PDF, DOCX, TXT (max 5MB)
 
 ### POST /api/extract
-
 Analyzes job description text and extracts structured information.
-
-**Request**: `{ text: string }`  
-**Response**: Job description with role, level, and extracted signals  
-**AI Model**: Claude Haiku 4 (optimized for speed)
+**Request**: `{ text: string }` | **Response**: Job description with role, level, and signals | **Model**: Claude Haiku 4
 
 ### POST /api/generate
-
-Transforms extracted signals into a complete interview rubric via Server-Sent Events.
-
-**Request**: `{ role: string, level: string, signals: ExtractedSignal[] }`  
-**Response**: SSE stream with `data: {"type": "signal", "signal": Signal}` events  
-**AI Model**: Claude Sonnet 4
+Transforms extracted signals into a complete interview rubric via SSE.
+**Request**: `{ role, level, signals }` | **Response**: SSE stream of `signal` events | **Model**: Claude Sonnet 4
 
 ### POST /api/export
+Exports rubric as PDF or DOCX.
+**Request**: `{ rubric: Rubric, format: 'pdf' | 'docx' }` | **Response**: Binary file download
 
-Exports rubric as PDF or DOCX file.
+### POST /api/jobs *(async pipeline)*
+Submits a rubric job to the Cloudflare producer Worker.
+**Request**: `{ jdText: string }` | **Response**: `{ jobId: string, status: 'queued' }`
 
-**Request**: `{ rubric: Rubric, format: 'pdf' | 'docx' }`  
-**Response**: Binary file download with appropriate headers  
-**Libraries**: @react-pdf/renderer, docx
-
-### POST /api/jobs
-
-Submits job to async pipeline (proxy to Cloudflare Worker).
-
-**Request**: `{ text: string }`  
-**Response**: `{ jobId: string, status: 'queued' }`  
-**Requires**: `RUBRIC_PRODUCER_URL` environment variable
-
-### GET /api/jobs/:jobId
-
-Polls async job status (proxy to Cloudflare Worker).
-
-**Response**: `{ status: 'queued' | 'running' | 'done' | 'failed', rubric?: Rubric, error?: string }`
+### GET /api/jobs/[jobId] *(async pipeline)*
+Polls job status from the producer Worker.
+**Response**: `{ status: 'queued' | 'running' | 'done' | 'failed', rubric?: Rubric }`
 
 ## Environment Variables
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
 | `ANTHROPIC_API_KEY` | Yes | — | Your Anthropic API key |
+| `RUBRIC_PRODUCER_URL` | Async pipeline only | — | Cloudflare producer Worker URL |
+| `NEXT_PUBLIC_USE_ASYNC_PIPELINE` | No | `false` | Set to `"true"` to enable the Cloudflare async pipeline |
 | `NEXT_PUBLIC_BASE_URL` | No | `http://localhost:3000` | Base URL for the application |
-| `NEXT_PUBLIC_USE_ASYNC_PIPELINE` | No | `false` | Enable async Cloudflare pipeline |
-| `RUBRIC_PRODUCER_URL` | No | — | Cloudflare Worker endpoint for async jobs |
 | `MAX_FILE_SIZE_MB` | No | `5` | Maximum upload file size in MB |
 | `RATE_LIMIT_MAX` | No | `10` | Max API requests per window |
 | `RATE_LIMIT_WINDOW_MS` | No | `60000` | Rate limit window in milliseconds |
@@ -244,7 +228,7 @@ The app is deployed on **AWS App Runner** with auto-deploy from the `main` branc
 - **Build**: `npm ci && npm run build` (standalone output)
 - **Budget**: $30/month ceiling with email alerts at 83%
 
-A `Dockerfile` is also provided for alternative container-based deployments.
+For the Cloudflare async pipeline deployment, see [`workers/README.md`](./workers/README.md).
 
 ## Contributing
 
@@ -260,7 +244,7 @@ But before I was an engineering manager, I spent over a decade as an educator. I
 
 The same principles apply whether you're grading a physics lab or interviewing a senior engineer. Define what "good" looks like *before* you start evaluating. Make the rubric visible to everyone. Align your panel on what you're actually measuring.
 
-My MS research in AI and my work teaching technical interview prep at CodePath gave me the tools to finally build something. I architected and shipped this MVP in 3 days using Claude Code, GitHub Actions, and AWS App Runner.
+My MS research in AI and my work teaching technical interview prep at CodePath gave me the tools to finally build something. I architected and shipped this MVP in 3 days using Claude Code, GitHub Actions, and AWS App Runner — then evolved it onto a Cloudflare Queues + R2 async pipeline.
 
 This is my attempt to bring those insights into hiring — and I'm building it in public.
 
