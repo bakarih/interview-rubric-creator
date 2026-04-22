@@ -38,8 +38,23 @@ An AI-powered web application that transforms job descriptions into structured, 
 1. **Input** — Upload a PDF, DOCX, or TXT file, or paste the job description text directly
 2. **Parse** — The server extracts raw text from uploaded files
 3. **Extract** — Claude analyzes the text and identifies the role, seniority level, and 5–10 key hiring signals
-4. **Generate** — Claude builds a complete rubric and streams it back signal-by-signal via SSE. Each signal appears in the UI as it is generated — no waiting for the full response. Each signal gets a weight (1–10), criteria for exceeds/meets/below expectations, a suggested assessment modality, and 2–3 interview questions
+4. **Generate** — Claude builds a complete rubric and streams it back signal-by-signal via SSE (or through async pipeline). Each signal appears in the UI as it is generated. Each signal gets a weight (1–10), criteria for exceeds/meets/below expectations, a suggested assessment modality, and 2–3 interview questions
 5. **Export** — Download the rubric as a formatted PDF or DOCX document
+
+## Architecture
+
+The app supports two processing pipelines:
+
+### Inline Pipeline (Default)
+- **Extract** (30s timeout): `/api/extract` → Claude Haiku 4 identifies signals
+- **Generate** (90s timeout): `/api/generate` → Claude Sonnet 4 streams rubric via SSE
+- Real-time signal rendering as they're generated
+
+### Async Pipeline (Optional)
+- **Submit**: `/api/jobs` → enqueue job via Cloudflare producer Worker
+- **Poll**: `/api/jobs/:jobId` → status updates until completion
+- Powered by Cloudflare Queues + R2 storage
+- Enabled with `NEXT_PUBLIC_USE_ASYNC_PIPELINE=true`
 
 ## Getting Started
 
@@ -114,13 +129,14 @@ npm start
 - **Multiple input methods** — Upload PDF, DOCX, or TXT files, or paste text directly
 - **PDF and DOCX export** — Download formatted rubrics with color-coded criteria tables
 - **Real-time streaming** — Watch as signals are progressively generated and rendered via Server-Sent Events
+- **Async pipeline support** — Optional Cloudflare Queues + R2 backend for high availability
 - **Shareable URLs** — Each rubric gets a unique URL for easy sharing
 - **Dark/light mode** — Theme toggle with system preference detection and localStorage persistence
 - **WCAG 2.1 AA accessible** — Skip navigation, keyboard support, ARIA labels, focus management, reduced motion support
 - **Feedback system** — In-app feedback button linking to GitHub issues
 - **Client-side timeout handling** — Extraction (30s) and generation (90s) timeouts with user-friendly error messages
 
-## Architecture
+## Project Structure
 
 ```
 src/
@@ -129,7 +145,8 @@ src/
 │   │   ├── parse/              # File text extraction
 │   │   ├── extract/            # Claude: JD → structured signals
 │   │   ├── generate/           # Claude: signals → weighted rubric (SSE stream)
-│   │   └── export/             # Rubric → PDF/DOCX binary
+│   │   ├── export/             # Rubric → PDF/DOCX binary
+│   │   └── jobs/               # Async pipeline proxy endpoints
 │   ├── rubric/[id]/            # Dynamic rubric view page
 │   ├── page.tsx                # Home page (upload/paste)
 │   ├── layout.tsx              # Root layout with theme support
@@ -142,6 +159,7 @@ src/
 ├── lib/
 │   ├── claude/                 # Anthropic client + prompt templates
 │   ├── parsers/                # PDF, DOCX, TXT parsers
+│   ├── utils/                  # asyncPipeline utilities
 │   └── validation/             # Zod schemas
 └── types/                      # TypeScript interfaces (Rubric, Signal, JD)
 ```
@@ -152,7 +170,8 @@ src/
 - **Server-Sent Events** — Rubric generation streams signals as they're created, providing immediate feedback during the 20-30s generation process.
 - **In-memory file processing** — Uploaded files are parsed in-memory and never persisted to disk or cloud storage.
 - **Zod validation everywhere** — All API inputs and Claude responses are validated at runtime, catching malformed data before it causes issues.
-- **AbortController timeouts** — Both pipeline fetch calls carry configurable client-side timeouts (30s for extraction, 90s for generation); the Anthropic SDK is configured with a 120s server-side timeout. Hangs surface as clear error messages instead of infinite spinners.
+- **AbortController timeouts** — Both pipeline fetch calls carry configurable client-side timeouts (30s for extraction, 90s for generation); the Anthropic SDK is configured with a 120s server-side timeout.
+- **Dual pipeline support** — Inline SSE streaming for development/low-scale, async Cloudflare pipeline for production scaling.
 - **Standalone Next.js output** — The build produces a self-contained server for containerized deployment.
 
 ## API Reference
@@ -189,12 +208,28 @@ Exports rubric as PDF or DOCX file.
 **Response**: Binary file download with appropriate headers  
 **Libraries**: @react-pdf/renderer, docx
 
+### POST /api/jobs
+
+Submits job to async pipeline (proxy to Cloudflare Worker).
+
+**Request**: `{ text: string }`  
+**Response**: `{ jobId: string, status: 'queued' }`  
+**Requires**: `RUBRIC_PRODUCER_URL` environment variable
+
+### GET /api/jobs/:jobId
+
+Polls async job status (proxy to Cloudflare Worker).
+
+**Response**: `{ status: 'queued' | 'running' | 'done' | 'failed', rubric?: Rubric, error?: string }`
+
 ## Environment Variables
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
 | `ANTHROPIC_API_KEY` | Yes | — | Your Anthropic API key |
 | `NEXT_PUBLIC_BASE_URL` | No | `http://localhost:3000` | Base URL for the application |
+| `NEXT_PUBLIC_USE_ASYNC_PIPELINE` | No | `false` | Enable async Cloudflare pipeline |
+| `RUBRIC_PRODUCER_URL` | No | — | Cloudflare Worker endpoint for async jobs |
 | `MAX_FILE_SIZE_MB` | No | `5` | Maximum upload file size in MB |
 | `RATE_LIMIT_MAX` | No | `10` | Max API requests per window |
 | `RATE_LIMIT_WINDOW_MS` | No | `60000` | Rate limit window in milliseconds |

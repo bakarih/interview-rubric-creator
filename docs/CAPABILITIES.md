@@ -25,6 +25,20 @@ From the extracted signals, Claude generates a complete interview rubric where e
 - **Assessment modality** — The recommended interview format: pair_programming, system_design, code_review, behavioral, take_home, technical_discussion, presentation, or case_study
 - **Interview questions** — 1–5 tailored behavioral or situational questions per signal
 
+### Processing Pipelines
+The application supports two processing modes:
+
+#### Inline Pipeline (Default)
+- **Real-time streaming** — Progressive display of signals as they're generated via Server-Sent Events (SSE)
+- **Direct processing** — Runs extraction and generation on the Next.js server
+- **Immediate feedback** — Users see signals appear in real-time during generation
+
+#### Async Pipeline (Configurable)
+- **Cloudflare Queues + R2** — Offloads processing to background workers with cloud storage
+- **Polling-based status** — UI polls for job status every 2 seconds until completion
+- **Scalable architecture** — Handles high-concurrency workloads through distributed processing
+- **Feature flag controlled** — Enabled via `NEXT_PUBLIC_USE_ASYNC_PIPELINE=true`
+
 ### Export
 - **PDF** — A4-formatted document with React PDF rendering, color-coded criteria labels (green for exceeds, blue for meets, orange for below), numbered signals sorted by weight, and structured layout with proper typography
 - **DOCX** — Word document generated using the docx library with borderless tables, color-coded cell backgrounds (green/blue/orange shading), proper heading hierarchy, and full Google Docs compatibility
@@ -33,8 +47,6 @@ From the extracted signals, Claude generates a complete interview rubric where e
 ### User Experience
 - **Dark and light mode** — Toggle with system preference detection, persisted across sessions
 - **Drag-and-drop upload** — Visual feedback on drag state with keyboard navigation support
-- **Real-time streaming** — Progressive display of signals as they're generated via Server-Sent Events (SSE)
-- **Keyboard navigation** — Full keyboard support throughout the interface including skip-to-content navigation
 - **Loading states** — Visual feedback during processing with cancel functionality for long-running operations
 - **Error handling** — Clear error messages with retry functionality and automatic timeouts (30s for extraction, 90s for generation)
 - **URL-based navigation** — Direct links to individual rubrics (`/rubric/[id]`) with shareable URLs and proper state management
@@ -113,10 +125,18 @@ The application uses **Claude Haiku 4** (`claude-haiku-4-5-20251001`) for extrac
 - **Hosting** — The application runs on a Next.js architecture with server-side API routes.
 
 ### Performance
+
+#### Inline Pipeline
 - **Timeouts** — Extraction has a 30-second timeout, generation has a 90-second timeout. Complex job descriptions or API latency may occasionally trigger timeouts.
 - **Request cancellation** — Users can cancel in-flight requests, but this aborts the entire pipeline and requires starting over.
 - **No retry logic** — Failed requests require manual retry by the user.
 - **120-second server timeout** — The Anthropic client has a 120-second timeout that exceeds the client-side timeout to ensure proper stream completion.
+
+#### Async Pipeline
+- **Processing time** — Background jobs typically complete in 30-60 seconds depending on job description complexity.
+- **Polling overhead** — UI polls every 2 seconds until completion (~15-22 requests per job).
+- **90-second timeout** — Jobs that don't complete within 90 seconds are considered failed.
+- **No real-time updates** — Status updates only show queued/running states, not individual signal progress.
 
 ---
 

@@ -108,7 +108,7 @@ Takes extracted signals and generates a complete weighted interview rubric using
 
 **Response (200):**
 
-Returns a Server-Sent Events stream with 90-second timeout. Each event contains JSON data:
+Returns a Server-Sent Events stream. Each event contains JSON data:
 
 **Signal Event:**
 ```json
@@ -165,7 +165,79 @@ Returns a Server-Sent Events stream with 90-second timeout. Each event contains 
 | Status | Reason |
 |--------|--------|
 | 400 | Missing required fields: role, level, or signals |
-| 500 | Claude API error, timeout (90s), or response parsing failure |
+| 500 | Claude API error or response parsing failure |
+
+---
+
+## POST /api/jobs
+
+Submits a job description to the async rubric generation pipeline.
+
+**Content-Type:** `application/json`
+
+**Request Body:**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `text` | string | Yes | Job description text (non-empty) |
+
+**Response (200):**
+
+```json
+{
+  "jobId": "abc123",
+  "status": "queued"
+}
+```
+
+**Errors:**
+
+| Status | Reason |
+|--------|--------|
+| 400 | Invalid JSON body or missing/empty text field |
+| 503 | Async pipeline not configured (missing RUBRIC_PRODUCER_URL) |
+| 502 | Failed to reach rubric service |
+
+---
+
+## GET /api/jobs/:jobId
+
+Polls the status of an async rubric generation job.
+
+**Response (200):**
+
+```json
+{
+  "jobId": "abc123",
+  "status": "done",
+  "createdAt": "2026-03-21T04:00:00.000Z",
+  "updatedAt": "2026-03-21T04:01:30.000Z",
+  "attempts": 1,
+  "rubric": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "role": "Senior Backend Engineer",
+    "level": "senior",
+    "signals": [...],
+    "createdAt": "2026-03-21T04:00:00.000Z",
+    "version": "1.0.0"
+  }
+}
+```
+
+**Job Status Values:**
+- `queued`: Job submitted but not yet started
+- `running`: Pipeline is processing the job
+- `done`: Completed successfully (includes `rubric` field)
+- `failed`: Processing failed (includes `error` field)
+
+**Errors:**
+
+| Status | Reason |
+|--------|--------|
+| 400 | Invalid jobId format |
+| 404 | Job not found |
+| 502 | Failed to reach rubric service |
+| 503 | Async pipeline not configured |
 
 ---
 
