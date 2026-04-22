@@ -32,12 +32,14 @@ The application supports two processing modes:
 - **Real-time streaming** — Progressive display of signals as they're generated via Server-Sent Events (SSE)
 - **Direct processing** — Runs extraction and generation on the Next.js server
 - **Immediate feedback** — Users see signals appear in real-time during generation
+- **Timeouts** — 30 seconds for extraction, 90 seconds for generation with user cancellation support
 
 #### Async Pipeline (Configurable)
 - **Cloudflare Queues + R2** — Offloads processing to background workers with cloud storage
 - **Polling-based status** — UI polls for job status every 2 seconds until completion
 - **Scalable architecture** — Handles high-concurrency workloads through distributed processing
 - **Feature flag controlled** — Enabled via `NEXT_PUBLIC_USE_ASYNC_PIPELINE=true`
+- **90-second timeout** — Jobs that don't complete within 90 seconds are considered failed
 
 ### Export
 - **PDF** — A4-formatted document with React PDF rendering, color-coded criteria labels (green for exceeds, blue for meets, orange for below), numbered signals sorted by weight, and structured layout with proper typography
@@ -48,8 +50,9 @@ The application supports two processing modes:
 - **Dark and light mode** — Toggle with system preference detection, persisted across sessions
 - **Drag-and-drop upload** — Visual feedback on drag state with keyboard navigation support
 - **Loading states** — Visual feedback during processing with cancel functionality for long-running operations
-- **Error handling** — Clear error messages with retry functionality and automatic timeouts (30s for extraction, 90s for generation)
+- **Error handling** — Clear error messages with retry functionality
 - **URL-based navigation** — Direct links to individual rubrics (`/rubric/[id]`) with shareable URLs and proper state management
+- **Local storage** — Rubrics are saved in browser localStorage with no server-side persistence
 
 ### Accessibility (WCAG 2.1 AA)
 - Skip-to-content navigation link
@@ -67,7 +70,7 @@ The application supports two processing modes:
 
 ## AI Model Capabilities
 
-The application uses **Claude Haiku 4** (`claude-haiku-4-5-20251001`) for extraction and **Claude Sonnet 4** (`claude-sonnet-4-20250514`) for generation with a two-step API process.
+The application uses **Claude Haiku 4** (`claude-haiku-4-5-20251001`) for extraction and **Claude Sonnet 4** (`claude-sonnet-4-20250514`) for generation with a two-step API process and 120-second server timeout.
 
 ### What the Model Does Well
 - **Structured output** — Reliably produces valid JSON matching the expected schema with automatic markdown fence stripping

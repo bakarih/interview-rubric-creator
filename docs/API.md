@@ -195,8 +195,8 @@ Submits a job description to the async rubric generation pipeline.
 | Status | Reason |
 |--------|--------|
 | 400 | Invalid JSON body or missing/empty text field |
-| 503 | Async pipeline not configured (missing RUBRIC_PRODUCER_URL) |
 | 502 | Failed to reach rubric service |
+| 503 | Async pipeline not configured (missing RUBRIC_PRODUCER_URL) |
 
 ---
 

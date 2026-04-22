@@ -170,9 +170,9 @@ The async mode submits jobs to Cloudflare Workers via `/api/jobs` proxy and poll
 - More reliable through proxies than long-lived connections
 - Simple retry and timeout handling
 
-### React-Based Export System with Server-Side Document Generation
+### Server-Side Document Generation with React Components
 The export system builds documents server-side using React components and native libraries:
-- **PDF**: @react-pdf/renderer with React.createElement for dynamic component generation
+- **PDF**: @react-pdf/renderer with `React.createElement` for dynamic component generation
 - **DOCX**: docx library with Document/Table/Paragraph components for structured layouts
 
 Both formats include:
@@ -188,7 +188,7 @@ Documents are generated server-side and returned as binary downloads with approp
 The application uses a stateful client-side architecture:
 - **Multi-Stage Flow**: Input → Loading → Streaming → Result → Error states with proper focus management
 - **Tab-based Input**: Upload/paste interface with ARIA roles and keyboard navigation
-- **Dynamic Routing**: `/rubric/[id]` pages load rubrics from localStorage
+- **Dynamic Routing**: `/rubric/[id]` pages load rubrics from localStorage with `React.use()` for params
 - **Progressive Streaming UI**: Shows signals appearing in real-time during generation (inline mode)
 - **Comprehensive Loading States**: Status message cycling with accessibility announcements
 
@@ -197,7 +197,7 @@ All API inputs are validated with Zod schemas before processing. Claude's JSON r
 
 ### Enhanced User Experience
 - **Accessibility**: Skip links, focus management, ARIA labels, screen reader support
-- **Theme System**: Dark/light mode toggle with localStorage persistence
+- **Theme System**: Dark/light mode toggle with localStorage persistence using `useSyncExternalStore`
 - **Feedback Integration**: GitHub issue templates for bug reports and feature requests
 - **Progressive Enhancement**: File drag-and-drop with fallback click-to-upload
 - **Error Handling**: Contextual error messages with retry functionality
