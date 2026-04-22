@@ -1,0 +1,33 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "rubric-producer",
+  "main": "src/index.ts",
+  "compatibility_date": "2025-07-18",
+  "compatibility_flags": ["nodejs_compat"],
+
+  "observability": {
+    "enabled": true
+  },
+
+  "queues": {
+    "producers": [
+      {
+        "queue": "rubric-jobs",
+        "binding": "RUBRIC_QUEUE"
+      }
+    ]
+  },
+
+  "r2_buckets": [
+    {
+      "binding": "RUBRICS_BUCKET",
+      "bucket_name": "interview-rubrics",
+      "preview_bucket_name": "interview-rubrics-dev"
+    }
+  ],
+
+  "vars": {
+    "MAX_JD_LENGTH": "100000",
+    "ALLOWED_ORIGINS": "http://localhost:3000,https://interviewrubric.com"
+  }
+}

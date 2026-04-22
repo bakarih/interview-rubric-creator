@@ -1,0 +1,16 @@
+# Dependencies
+node_modules/
+
+# Wrangler local state
+.wrangler/
+.dev.vars
+
+# Build output
+dist/
+.output/
+
+# TypeScript incremental build
+*.tsbuildinfo
+
+# macOS
+.DS_Store

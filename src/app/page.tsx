@@ -9,21 +9,40 @@ import ErrorMessage from '@/components/common/ErrorMessage';
 import RubricView from '@/components/rubric/RubricView';
 import ExportButtons from '@/components/export/ExportButtons';
 import { Rubric, JobDescription, Signal } from '@/types';
+import { runAsyncPipeline, AsyncJobStatus } from '@/lib/utils/asyncPipeline';
 
 type FlowState = 'input' | 'loading' | 'streaming' | 'result' | 'error';
 type TabId = 'upload' | 'paste';
 
-// Haiku-backed extraction is fast; 30 s is generous.
+// Feature flag: when "true", the app routes rubric generation through the
+// Cloudflare Queues + R2 async pipeline. Otherwise, it uses the inline
+// Next.js streaming pipeline (/api/extract + SSE-streamed /api/generate).
+//
+// This is a client-side flag (NEXT_PUBLIC_*) so the UI can decide which path
+// to take. The server-side RUBRIC_PRODUCER_URL still gates whether the /api/jobs
+// proxy actually works.
+const USE_ASYNC_PIPELINE = process.env.NEXT_PUBLIC_USE_ASYNC_PIPELINE === 'true';
+
+// Inline-flow timeouts. Haiku-backed extraction is fast; 30 s is generous.
 const EXTRACT_TIMEOUT_MS = 30_000;
 // Sonnet 4 streaming a full rubric (8192 max_tokens, 8-10 signals) can take
 // 40-70 s. 90 s gives it room without letting a true hang go forever.
 const GENERATE_TIMEOUT_MS = 90_000;
+
+// Async-pipeline status labels, keyed off the polled job status.
+const ASYNC_STATUS_LABELS: Record<AsyncJobStatus, string> = {
+  queued: 'Queued — waiting for a worker...',
+  running: 'Running pipeline — extracting signals and generating rubric...',
+  done: 'Done',
+  failed: 'Failed',
+};
 
 export default function Home() {
   const router = useRouter();
   const [flow, setFlow] = useState<FlowState>('input');
   const [activeTab, setActiveTab] = useState<TabId>('upload');
   const [pastedText, setPastedText] = useState('');
+  const [asyncStatusLabel, setAsyncStatusLabel] = useState<string>('Submitting...');
   const [rubric, setRubric] = useState<Rubric | null>(null);
   const [errorMessage, setErrorMessage] = useState('');
   const mainRef = useRef<HTMLElement>(null);
@@ -53,7 +72,50 @@ export default function Home() {
     return controller;
   }
 
-  async function runPipeline(text: string) {
+  /**
+   * Async pipeline (Cloudflare Queues + R2). Submits the JD to the producer
+   * Worker via /api/jobs, then polls /api/jobs/:jobId until terminal state.
+   * No intermediate streaming — the UI shows queued/running labels from polling.
+   */
+  async function runAsyncFlow(text: string) {
+    const controller = makeAbortController();
+
+    setFlow('loading');
+    setAsyncStatusLabel('Submitting...');
+
+    try {
+      const generatedRubric = await runAsyncPipeline(text, {
+        signal: controller.signal,
+        onStatus: (status, attempts) => {
+          const base = ASYNC_STATUS_LABELS[status] ?? status;
+          setAsyncStatusLabel(attempts > 1 ? `${base} (attempt ${attempts})` : base);
+        },
+      });
+
+      // Save to localStorage so the /rubric/[id] route can load it
+      const stored = JSON.parse(localStorage.getItem('rubrics') ?? '{}') as Record<string, Rubric>;
+      stored[generatedRubric.id] = generatedRubric;
+      localStorage.setItem('rubrics', JSON.stringify(stored));
+
+      setRubric(generatedRubric);
+      setFlow('result');
+      router.push(`/rubric/${generatedRubric.id}`);
+    } catch (err) {
+      // Ignore aborts — they're intentional (e.g., user hit Start Over mid-flight)
+      if (err instanceof DOMException && err.name === 'AbortError') {
+        return;
+      }
+      setErrorMessage(err instanceof Error ? err.message : 'An unexpected error occurred');
+      setFlow('error');
+    }
+  }
+
+  /**
+   * Inline pipeline (SSE streaming). Calls /api/extract, then consumes the
+   * SSE stream from /api/generate, progressively rendering signals as they
+   * arrive. Default path when USE_ASYNC_PIPELINE is false.
+   */
+  async function runInlineFlow(text: string) {
     setFlow('loading');
     signalsRef.current = [];
 
@@ -97,7 +159,7 @@ export default function Home() {
       });
       setFlow('streaming');
 
-      // Step 2: Generate — 30 s timeout covers both the initial fetch and stream reading
+      // Step 2: Generate — 90 s timeout covers both the initial fetch and stream reading
       const generateController = makeAbortController();
       const generateTimeout = setTimeout(() => generateController.abort(), GENERATE_TIMEOUT_MS);
 
@@ -203,8 +265,17 @@ export default function Home() {
     }
   }
 
+  async function runPipeline(text: string) {
+    if (USE_ASYNC_PIPELINE) {
+      await runAsyncFlow(text);
+    } else {
+      await runInlineFlow(text);
+    }
+  }
+
   async function handleFile(file: File) {
     setFlow('loading');
+    setAsyncStatusLabel('Parsing document...');
 
     try {
       const formData = new FormData();
@@ -250,6 +321,9 @@ export default function Home() {
   }
 
   if (flow === 'loading') {
+    const message = USE_ASYNC_PIPELINE
+      ? asyncStatusLabel
+      : 'Extracting signals from job description…';
     return (
       <main
         id="main-content"
@@ -258,7 +332,12 @@ export default function Home() {
         className="flex min-h-screen flex-col items-center justify-center bg-gray-50 dark:bg-gray-950 px-4 focus:outline-none"
       >
         <div className="w-full max-w-md rounded-2xl bg-white dark:bg-gray-900 p-10 shadow-sm border border-gray-200 dark:border-gray-700 text-center">
-          <LoadingSpinner message="Extracting signals from job description…" />
+          <LoadingSpinner message={message} />
+          {USE_ASYNC_PIPELINE && (
+            <p className="mt-4 text-xs text-gray-500 dark:text-gray-400">
+              Running on Cloudflare Queues + R2. This can take 30–60 seconds.
+            </p>
+          )}
         </div>
       </main>
     );
@@ -357,6 +436,11 @@ export default function Home() {
           <p className="mt-2 text-gray-600 dark:text-gray-400">
             Transform job descriptions into structured interview rubrics with AI
           </p>
+          {USE_ASYNC_PIPELINE && (
+            <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+              Async mode: powered by Cloudflare Queues + R2
+            </p>
+          )}
         </div>
 
         {/* Card */}
