@@ -10,6 +10,8 @@ const nextConfig: NextConfig = {
   env: {
     NEXT_PUBLIC_COMMIT_SHA: commitSha,
     NEXT_PUBLIC_DEPLOYED_AT: new Date().toISOString(),
+    NEXT_PUBLIC_USE_ASYNC_PIPELINE: process.env.NEXT_PUBLIC_USE_ASYNC_PIPELINE ?? 'false',
+    NEXT_PUBLIC_BASE_URL: process.env.NEXT_PUBLIC_BASE_URL ?? 'http://localhost:3000',
   },
 };
 
