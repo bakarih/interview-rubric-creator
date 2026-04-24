@@ -13,6 +13,7 @@ import { test, expect, type Page } from '@playwright/test';
 import {
   MOCK_RUBRIC,
   MOCK_RUBRIC_ID,
+  MOCK_JOB_ID,
   MOCK_EXTRACT_RESPONSE,
   LONG_JD_TEXT,
 } from './fixtures/mockData';
@@ -41,6 +42,7 @@ function buildGenerateSSEBody(rubric: typeof MOCK_RUBRIC): string {
 
 /** Intercept all three pipeline API routes with deterministic mock responses. */
 async function mockPipelineRoutes(page: Page) {
+  // Inline pipeline
   await page.route('**/api/extract', async (route) => {
     await route.fulfill({
       status: 200,
@@ -54,6 +56,45 @@ async function mockPipelineRoutes(page: Page) {
       status: 200,
       contentType: 'text/event-stream',
       body: buildGenerateSSEBody(MOCK_RUBRIC),
+    });
+  });
+
+  // Async pipeline
+  await mockAsyncPipelineRoutes(page);
+}
+
+/**
+ * Intercept the async pipeline routes (Cloudflare Queues + R2 path).
+ *
+ * POST /api/jobs  → returns a queued job ID immediately.
+ * GET  /api/jobs/:jobId → returns status=done with the mock rubric on the
+ *   first poll, keeping tests fast without real queue latency.
+ */
+async function mockAsyncPipelineRoutes(page: Page) {
+  await page.route('**/api/jobs', async (route) => {
+    if (route.request().method() !== 'POST') {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ jobId: MOCK_JOB_ID, status: 'queued' }),
+    });
+  });
+
+  await page.route(`**/api/jobs/${MOCK_JOB_ID}`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        jobId: MOCK_JOB_ID,
+        status: 'done',
+        rubric: MOCK_RUBRIC,
+        createdAt: MOCK_RUBRIC.createdAt,
+        updatedAt: MOCK_RUBRIC.createdAt,
+        attempts: 1,
+      }),
     });
   });
 }
@@ -188,7 +229,8 @@ test.describe('Full paste-text pipeline', () => {
   test('shows loading state while pipeline runs', async ({ page }) => {
     await mockPipelineRoutes(page);
 
-    // Delay the extract response so we can assert on the loading UI.
+    // Delay both pipeline entry points so the loading UI is visible in either
+    // mode: inline (delays /api/extract) or async (delays POST /api/jobs).
     await page.route('**/api/extract', async (route) => {
       await new Promise((r) => setTimeout(r, 800));
       await route.fulfill({
@@ -197,15 +239,25 @@ test.describe('Full paste-text pipeline', () => {
         body: JSON.stringify(MOCK_EXTRACT_RESPONSE),
       });
     });
+    await page.route('**/api/jobs', async (route) => {
+      if (route.request().method() !== 'POST') { await route.continue(); return; }
+      await new Promise((r) => setTimeout(r, 800));
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ jobId: MOCK_JOB_ID, status: 'queued' }),
+      });
+    });
 
     await page.goto('/');
     await page.getByRole('tab', { name: 'Paste Text' }).click();
     await page.getByPlaceholder('Paste your job description here...').fill(LONG_JD_TEXT);
     await page.getByRole('button', { name: 'Generate Rubric' }).click();
 
-    // The loading spinner should appear while extract is pending.
+    // Loading spinner appears while the first network call is pending.
+    // Inline mode shows the extract label; async mode shows "Submitting...".
     await expect(
-      page.getByText('Extracting signals from job description\u2026'),
+      page.getByText(/Extracting signals from job description|Submitting\.\.\./),
     ).toBeVisible();
   });
 
@@ -317,8 +369,9 @@ test.describe('File upload pipeline', () => {
 
     // React batches setSelectedFile + setFlow('loading') together, so the page
     // immediately transitions to the loading spinner. Verify the spinner text.
+    // Inline mode: "Extracting signals…". Async mode: "Parsing document...".
     await expect(
-      page.getByText('Extracting signals from job description\u2026'),
+      page.getByText(/Extracting signals from job description|Parsing document/),
     ).toBeVisible();
 
     resolveParse!();
@@ -557,7 +610,18 @@ test.describe('Export', () => {
 
 test.describe('Error handling', () => {
   test('shows an error when /api/extract fails', async ({ page }) => {
+    // Inline: /api/extract returns 500.
     await page.route('**/api/extract', async (route) => {
+      await route.fulfill({
+        status: 500,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Claude is unavailable' }),
+      });
+    });
+
+    // Async: POST /api/jobs returns the same error so the UI message matches.
+    await page.route('**/api/jobs', async (route) => {
+      if (route.request().method() !== 'POST') { await route.continue(); return; }
       await route.fulfill({
         status: 500,
         contentType: 'application/json',
@@ -574,6 +638,7 @@ test.describe('Error handling', () => {
   });
 
   test('shows an error when /api/generate fails', async ({ page }) => {
+    // Inline: extract succeeds, generate fails.
     await page.route('**/api/extract', async (route) => {
       await route.fulfill({
         status: 200,
@@ -590,6 +655,31 @@ test.describe('Error handling', () => {
       });
     });
 
+    // Async: job is accepted then the poll reports it failed.
+    await page.route('**/api/jobs', async (route) => {
+      if (route.request().method() !== 'POST') { await route.continue(); return; }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ jobId: MOCK_JOB_ID, status: 'queued' }),
+      });
+    });
+
+    await page.route(`**/api/jobs/${MOCK_JOB_ID}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          jobId: MOCK_JOB_ID,
+          status: 'failed',
+          error: 'Rubric generation timed out',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          attempts: 1,
+        }),
+      });
+    });
+
     await page.goto('/');
     await page.getByRole('tab', { name: 'Paste Text' }).click();
     await page.getByPlaceholder('Paste your job description here...').fill(LONG_JD_TEXT);
@@ -599,11 +689,11 @@ test.describe('Error handling', () => {
   });
 
   test('allows the user to retry after an error', async ({ page }) => {
-    // First attempt: extract fails.
-    let callCount = 0;
+    // Inline: first extract call fails, second succeeds.
+    let extractCallCount = 0;
     await page.route('**/api/extract', async (route) => {
-      callCount++;
-      if (callCount === 1) {
+      extractCallCount++;
+      if (extractCallCount === 1) {
         await route.fulfill({
           status: 500,
           contentType: 'application/json',
@@ -621,8 +711,19 @@ test.describe('Error handling', () => {
     await page.route('**/api/generate', async (route) => {
       await route.fulfill({
         status: 200,
+        contentType: 'text/event-stream',
+        body: buildGenerateSSEBody(MOCK_RUBRIC),
+      });
+    });
+
+    // Async: POST /api/jobs fails — the "try again" button resets to the home
+    // form (handleReset), so we only need the first attempt to fail.
+    await page.route('**/api/jobs', async (route) => {
+      if (route.request().method() !== 'POST') { await route.continue(); return; }
+      await route.fulfill({
+        status: 500,
         contentType: 'application/json',
-        body: JSON.stringify(MOCK_RUBRIC),
+        body: JSON.stringify({ error: 'Temporary failure' }),
       });
     });
 

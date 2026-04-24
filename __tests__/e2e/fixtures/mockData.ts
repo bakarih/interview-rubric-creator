@@ -3,6 +3,9 @@ import type { Rubric } from '../../../src/types';
 // ─── Shared rubric ID used across all E2E tests ───────────────────────────────
 export const MOCK_RUBRIC_ID = 'e2e-test-rubric-abc123';
 
+// ─── Shared job ID used by async pipeline E2E tests ───────────────────────────
+export const MOCK_JOB_ID = 'e2e-test-job-abc123';
+
 // ─── Mock rubric returned by /api/generate ────────────────────────────────────
 export const MOCK_RUBRIC: Rubric = {
   id: MOCK_RUBRIC_ID,
