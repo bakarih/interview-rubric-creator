@@ -266,3 +266,18 @@ Binary file download with appropriate headers:
 |--------|--------|
 | 400 | Missing required fields (rubric, format) or invalid format value |
 | 500 | Document generation failure |
+
+---
+
+## GET /api/version
+
+Returns deployment information.
+
+**Response (200):**
+
+```json
+{
+  "commit": "abc123def456",
+  "deployedAt": "2026-03-21T04:00:00.000Z"
+}
+```

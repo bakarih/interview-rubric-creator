@@ -123,10 +123,6 @@ The application uses **Claude Haiku 4** (`claude-haiku-4-5-20251001`) for extrac
 - **No Google Docs integration** — DOCX files can be opened in Google Docs, but there is no direct Google Docs API integration.
 - **Fixed filename format** — Exported files use generic names (rubric.pdf, rubric.docx) rather than role-specific names.
 
-### Cost
-- **API usage** — Each job description processed makes two API calls: one to Claude Haiku 4 for extraction and one to Claude Sonnet 4 for generation. At current pricing, expect roughly $0.01–0.05 per rubric depending on JD length.
-- **Hosting** — The application runs on a Next.js architecture with server-side API routes.
-
 ### Performance
 
 #### Inline Pipeline
@@ -140,6 +136,10 @@ The application uses **Claude Haiku 4** (`claude-haiku-4-5-20251001`) for extrac
 - **Polling overhead** — UI polls every 2 seconds until completion (~15-22 requests per job).
 - **90-second timeout** — Jobs that don't complete within 90 seconds are considered failed.
 - **No real-time updates** — Status updates only show queued/running states, not individual signal progress.
+
+### Cost
+- **API usage** — Each job description processed makes two API calls: one to Claude Haiku 4 for extraction and one to Claude Sonnet 4 for generation. At current pricing, expect roughly $0.01–0.05 per rubric depending on JD length.
+- **Hosting** — The application runs on a Next.js architecture with server-side API routes.
 
 ---
 

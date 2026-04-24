@@ -84,6 +84,7 @@ src/
 │   │   ├── extract/route.ts      # Text → JobDescription (Claude Haiku)
 │   │   ├── generate/route.ts     # Signals → Rubric (Claude Sonnet, SSE streaming)
 │   │   ├── export/route.ts       # Rubric → PDF/DOCX binary
+│   │   ├── version/route.ts      # Deploy info endpoint (commit SHA, timestamp)
 │   │   └── jobs/
 │   │       ├── route.ts          # POST proxy to Cloudflare Worker
 │   │       └── [jobId]/route.ts  # GET poll async job status
