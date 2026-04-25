@@ -10,7 +10,7 @@
 - **File size** — Supports uploads up to 5 MB
 
 ### AI-Powered Extraction
-The application uses **Claude Haiku 4** (`claude-haiku-4-5-20251001`) for extraction and **Claude Sonnet 4** (`claude-sonnet-4-20250514`) for generation to analyze job descriptions and extract:
+The application uses **Claude Haiku 4** (`claude-haiku-4-5-20251001`) for extraction and **Claude Sonnet 4.6** (`claude-sonnet-4-6`) for generation to analyze job descriptions and extract:
 - **Role title** — The position being hired for
 - **Seniority level** — Classified into one of 10 levels: entry, mid, senior, staff, principal, manager, senior_manager, director, vp, executive
 - **Department and company** — When identifiable from the text
@@ -70,7 +70,7 @@ The application supports two processing modes:
 
 ## AI Model Capabilities
 
-The application uses **Claude Haiku 4** (`claude-haiku-4-5-20251001`) for extraction and **Claude Sonnet 4** (`claude-sonnet-4-20250514`) for generation with a two-step API process and 120-second server timeout.
+The application uses **Claude Haiku 4** (`claude-haiku-4-5-20251001`) for extraction and **Claude Sonnet 4.6** (`claude-sonnet-4-6`) for generation with a two-step API process and 120-second server timeout.
 
 ### What the Model Does Well
 - **Structured output** — Reliably produces valid JSON matching the expected schema with automatic markdown fence stripping
@@ -138,7 +138,7 @@ The application uses **Claude Haiku 4** (`claude-haiku-4-5-20251001`) for extrac
 - **No real-time updates** — Status updates only show queued/running states, not individual signal progress.
 
 ### Cost
-- **API usage** — Each job description processed makes two API calls: one to Claude Haiku 4 for extraction and one to Claude Sonnet 4 for generation. At current pricing, expect roughly $0.01–0.05 per rubric depending on JD length.
+- **API usage** — Each job description processed makes two API calls: one to Claude Haiku 4.5 for extraction and one to Claude Sonnet 4.6 for generation. At current pricing, expect roughly $0.01–0.05 per rubric depending on JD length.
 - **Hosting** — The application runs on a Next.js architecture with server-side API routes.
 
 ---

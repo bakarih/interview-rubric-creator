@@ -2,7 +2,7 @@
 
 ## Overview
 
-Interview Rubric Creator is a Next.js application that uses Claude AI (claude-sonnet-4-20250514 and claude-haiku-4-5-20251001) to transform job descriptions into structured interview rubrics. It runs as a stateless server — no database, no cloud storage — with all rubric data stored client-side in localStorage.
+Interview Rubric Creator is a Next.js application that uses Claude AI (claude-sonnet-4-6 and claude-haiku-4-5-20251001) to transform job descriptions into structured interview rubrics. It runs as a stateless server — no database, no cloud storage — with all rubric data stored client-side in localStorage.
 
 The application supports two processing modes:
 - **Inline Pipeline** — Real-time streaming generation via Next.js API routes
@@ -31,7 +31,7 @@ User Input                    Server (API Routes)                     External
                        POST /api/generate (SSE streaming)
                         │ Validates role, level, signals
                         │ Sends to Claude ───────────────────▶ Anthropic API
-                        │ (claude-sonnet-4-20250514)          (higher quality generation)
+                        │ (claude-sonnet-4-6)                 (higher quality generation)
                         │ Streams signals as individual JSON objects
                         │ Assigns UUIDs to each signal
                         │ Returns complete Rubric via SSE

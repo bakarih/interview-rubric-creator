@@ -107,7 +107,7 @@ npm start
 |-------|-----------|---------|
 | Framework | [Next.js 16](https://nextjs.org/) (App Router) | Full-stack React framework with SSR |
 | Language | [TypeScript 5](https://www.typescriptlang.org/) | Type safety across the codebase |
-| AI | [Claude Sonnet 4 & Haiku 4](https://docs.anthropic.com/) via Anthropic SDK | Job description analysis and rubric generation |
+| AI | [Claude Sonnet 4.6 & Haiku 4.5](https://docs.anthropic.com/) via Anthropic SDK | Job description analysis and rubric generation |
 | Styling | [Tailwind CSS](https://tailwindcss.com/) with Geist fonts | Utility-first CSS with dark mode support |
 | Validation | [Zod 3](https://zod.dev/) | Runtime schema validation for all inputs and outputs |
 | PDF Export | [@react-pdf/renderer](https://react-pdf.org/) | PDF document generation with React components |
@@ -192,7 +192,7 @@ Analyzes job description text and extracts structured information.
 
 ### POST /api/generate
 Transforms extracted signals into a complete interview rubric via SSE.
-**Request**: `{ role, level, signals }` | **Response**: SSE stream of `signal` events | **Model**: Claude Sonnet 4
+**Request**: `{ role, level, signals }` | **Response**: SSE stream of `signal` events | **Model**: Claude Sonnet 4.6
 
 ### POST /api/export
 Exports rubric as PDF or DOCX.
