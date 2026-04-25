@@ -10,7 +10,7 @@
 - **File size** — Supports uploads up to 5 MB
 
 ### AI-Powered Extraction
-The application uses **Claude Haiku 4** (`claude-haiku-4-5-20251001`) for extraction and **Claude Sonnet 4.6** (`claude-sonnet-4-6`) for generation to analyze job descriptions and extract:
+The application uses **Claude Haiku 4.5** (`claude-haiku-4-5-20251001`) for extraction and **Claude Sonnet 4.6** (`claude-sonnet-4-6`) for generation to analyze job descriptions and extract:
 - **Role title** — The position being hired for
 - **Seniority level** — Classified into one of 10 levels: entry, mid, senior, staff, principal, manager, senior_manager, director, vp, executive
 - **Department and company** — When identifiable from the text
@@ -33,6 +33,7 @@ The application supports two processing modes:
 - **Direct processing** — Runs extraction and generation on the Next.js server
 - **Immediate feedback** — Users see signals appear in real-time during generation
 - **Timeouts** — 30 seconds for extraction, 90 seconds for generation with user cancellation support
+- **120-second server timeout** — Anthropic client timeout exceeds frontend timeout to ensure proper stream completion
 
 #### Async Pipeline (Configurable)
 - **Cloudflare Queues + R2** — Offloads processing to background workers with cloud storage
@@ -40,6 +41,7 @@ The application supports two processing modes:
 - **Scalable architecture** — Handles high-concurrency workloads through distributed processing
 - **Feature flag controlled** — Enabled via `NEXT_PUBLIC_USE_ASYNC_PIPELINE=true`
 - **90-second timeout** — Jobs that don't complete within 90 seconds are considered failed
+- **Status polling** — 15-22 requests per job with ~30-60 second completion times
 
 ### Export
 - **PDF** — A4-formatted document with React PDF rendering, color-coded criteria labels (green for exceeds, blue for meets, orange for below), numbered signals sorted by weight, and structured layout with proper typography
@@ -70,7 +72,7 @@ The application supports two processing modes:
 
 ## AI Model Capabilities
 
-The application uses **Claude Haiku 4** (`claude-haiku-4-5-20251001`) for extraction and **Claude Sonnet 4.6** (`claude-sonnet-4-6`) for generation with a two-step API process and 120-second server timeout.
+The application uses **Claude Haiku 4.5** (`claude-haiku-4-5-20251001`) for extraction and **Claude Sonnet 4.6** (`claude-sonnet-4-6`) for generation with a two-step API process and 120-second server timeout.
 
 ### What the Model Does Well
 - **Structured output** — Reliably produces valid JSON matching the expected schema with automatic markdown fence stripping

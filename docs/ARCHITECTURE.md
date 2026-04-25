@@ -173,7 +173,7 @@ The async mode submits jobs to Cloudflare Workers via `/api/jobs` proxy and poll
 
 ### Server-Side Document Generation with React Components
 The export system builds documents server-side using React components and native libraries:
-- **PDF**: @react-pdf/renderer with `React.createElement` for dynamic component generation
+- **PDF**: @react-pdf/renderer with `React.createElement` for dynamic component generation (SSR-compatible)
 - **DOCX**: docx library with Document/Table/Paragraph components for structured layouts
 
 Both formats include:
@@ -231,7 +231,7 @@ interface Signal {
     below: string;         // What "below expectations" looks like
   };
   suggestedModality: AssessmentModality;
-  suggestedQuestions: string[];  // 2–5 interview questions
+  suggestedQuestions: string[];  // 1–5 interview questions
 }
 
 // How to assess a signal
