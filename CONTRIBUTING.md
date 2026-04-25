@@ -32,7 +32,7 @@ Want to get your hands dirty? Here's how:
 - Next.js 16 (App Router)
 - TypeScript
 - Tailwind CSS 4
-- Claude Sonnet 4 (Anthropic API)
+- Claude Sonnet 4.6 (Anthropic API)
 
 #### Development Setup
 ```bash

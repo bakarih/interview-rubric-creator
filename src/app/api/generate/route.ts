@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
       try {
         const claude = getClaudeClient();
         const messageStream = claude.messages.stream({
-          model: 'claude-sonnet-4-20250514',
+          model: 'claude-sonnet-4-6',
           max_tokens: 8192,
           system: GENERATE_RUBRIC_SYSTEM_PROMPT,
           messages: [

@@ -25,7 +25,7 @@ const USE_ASYNC_PIPELINE = process.env.NEXT_PUBLIC_USE_ASYNC_PIPELINE === 'true'
 
 // Inline-flow timeouts. Haiku-backed extraction is fast; 30 s is generous.
 const EXTRACT_TIMEOUT_MS = 30_000;
-// Sonnet 4 streaming a full rubric (8192 max_tokens, 8-10 signals) can take
+// Sonnet 4.6 streaming a full rubric (8192 max_tokens, 8-10 signals) can take
 // 40-70 s. 90 s gives it room without letting a true hang go forever.
 const GENERATE_TIMEOUT_MS = 90_000;
 
