@@ -33,23 +33,25 @@ The application supports two processing modes controlled by the `NEXT_PUBLIC_USE
 - **Direct processing** — Runs extraction and generation on the Next.js server
 - **Immediate feedback** — Users see signals appear in real-time during generation
 - **Timeouts** — 30 seconds for extraction, 90 seconds for generation with user cancellation support
-- **120-second server timeout** — Anthropic client timeout exceeds frontend timeout to ensure proper stream completion
+- **120-second server timeout** — Anthropic client timeout exceeds the frontend timeout to ensure proper stream completion
+- **Model configuration** — Sonnet 4.6 uses `output_config: { effort: 'medium' }` and `max_tokens: 8192`; Haiku 4.5 does not support the effort parameter
 
 #### Async Pipeline (Configurable)
 - **Cloudflare Queues + R2** — Offloads processing to background workers with cloud storage via `RUBRIC_PRODUCER_URL`
-- **Polling-based status** — UI polls `/api/jobs/:jobId` for status every 2 seconds until completion
+- **Polling-based status** — UI polls `/api/jobs/:jobId` every 2 seconds until completion
+- **Proxy architecture** — `/api/jobs` and `/api/jobs/:jobId` proxy requests to the producer Worker, keeping the Worker URL server-side only and avoiding CORS configuration
 - **Scalable architecture** — Handles high-concurrency workloads through distributed processing
 - **Feature flag controlled** — Enabled via `NEXT_PUBLIC_USE_ASYNC_PIPELINE=true`
-- **90-second timeout** — Jobs that don't complete within 90 seconds are considered failed
-- **Status polling** — 15-22 requests per job with ~30-60 second completion times
+- **90-second client timeout** — Jobs that don't complete within 90 seconds are considered failed
+- **Status labels** — UI surfaces queued, running, done, and failed states with attempt counts
 
 ### Export
 - **PDF** — A4-formatted document with React PDF rendering, color-coded criteria labels (green for exceeds, blue for meets, orange for below), numbered signals sorted by weight, and structured layout with proper typography
 - **DOCX** — Word document generated using the docx library with borderless tables, color-coded cell backgrounds (green/blue/orange shading), proper heading hierarchy, and full Google Docs compatibility
-- **Fixed filenames** — Exports use standardized names (rubric.pdf, rubric.docx)
+- **Fixed filenames** — Exports use standardized names (`rubric.pdf`, `rubric.docx`)
 
 ### User Experience
-- **Dark and light mode** — Toggle with system preference detection, persisted across sessions
+- **Dark and light mode** — Toggle with system preference detection, persisted across sessions via localStorage
 - **Drag-and-drop upload** — Visual feedback on drag state with keyboard navigation support
 - **Loading states** — Visual feedback during processing with cancel functionality for long-running operations
 - **Error handling** — Clear error messages with retry functionality
@@ -65,18 +67,23 @@ The application supports two processing modes controlled by the `NEXT_PUBLIC_USE
 - Tabbed interface with full ARIA tablist implementation
 
 ### Feedback System
-- **Built-in feedback widget** — Fixed-position feedback button with expandable menu for sharing feedback, reporting bugs, suggesting features, or contributing code
-- **Direct GitHub integration** — Links to repository issue templates for structured feedback with specific templates for each feedback type
+- **Built-in feedback widget** — Fixed-position button (bottom-left) with expandable menu for sharing feedback, reporting bugs, suggesting features, or contributing code
+- **Direct GitHub integration** — Links to repository issue templates for structured feedback (feedback, bug report, feature request, contributing guide)
 
-### API and Status
-- **Version endpoint** — `/api/version` returns commit SHA and deployment timestamp
-- **Health checking** — Status tracking for async pipeline jobs with detailed error reporting
+### API Endpoints
+- `POST /api/parse` — Parses uploaded files (PDF, DOCX, TXT) and returns extracted text
+- `POST /api/extract` — Extracts structured job description data from raw text using Claude Haiku 4.5
+- `POST /api/generate` — Streams rubric signals as SSE using Claude Sonnet 4.6
+- `POST /api/export` — Renders and returns a PDF or DOCX file for download
+- `POST /api/jobs` — Proxies job submission to the async producer Worker
+- `GET /api/jobs/:jobId` — Proxies status polling to the async producer Worker
+- `GET /api/version` — Returns `commit` (SHA) and `deployedAt` timestamp from environment variables
 
 ---
 
 ## AI Model Capabilities
 
-The application uses **Claude Haiku 4.5** (`claude-haiku-4-5-20251001`) for extraction and **Claude Sonnet 4.6** (`claude-sonnet-4-6`) for generation with a two-step API process and 120-second server timeout. Sonnet 4.6 uses medium effort output configuration for higher quality generation.
+The application uses **Claude Haiku 4.5** (`claude-haiku-4-5-20251001`) for extraction and **Claude Sonnet 4.6** (`claude-sonnet-4-6`) for generation. Sonnet 4.6 uses `output_config: { effort: 'medium' }` for higher-quality generation. The Anthropic client has a 120-second timeout. Haiku 4.5 does not support the `output_config` parameter and omits it automatically.
 
 ### What the Model Does Well
 - **Structured output** — Reliably produces valid JSON matching the expected schema with automatic markdown fence stripping
@@ -111,10 +118,11 @@ The application uses **Claude Haiku 4.5** (`claude-haiku-4-5-20251001`) for extr
 ### Rubric Generation
 - **Weights are suggestions** — The 1–10 weights reflect the model's interpretation of signal importance. Hiring teams should review and adjust weights based on their priorities.
 - **Criteria are starting points** — The exceeds/meets/below criteria are generated guidelines. They should be calibrated to the specific team's expectations and bar.
-- **Modality suggestions** — The suggested assessment format (pair_programming, system_design, etc.) is a recommendation. Teams should adapt based on their interview process and constraints.
+- **Modality suggestions** — The suggested assessment format is a recommendation. Teams should adapt based on their interview process and constraints.
 - **No organizational context** — The model has no knowledge of your company's culture, existing team composition, or internal expectations. Rubrics reflect only what's in the job description.
 - **Maximum 15 signals** — Rubrics are capped at 15 signals to keep interviews focused and practical.
-- **Token limits** — Rubric generation uses a maximum of 8,192 tokens for generation, which may truncate very detailed rubrics.
+- **Token limits** — Rubric generation uses a maximum of 8,192 tokens, which may truncate very detailed rubrics.
+- **Streaming line format** — The generator emits one JSON object per line. Lines that are not valid JSON (e.g., markdown fences, blank lines) are silently skipped.
 
 ### Data and Privacy
 - **No persistence** — Rubrics are stored only in the browser's localStorage. Clearing browser data deletes all rubrics permanently. There is no cloud backup or sync.
@@ -124,25 +132,25 @@ The application uses **Claude Haiku 4.5** (`claude-haiku-4-5-20251001`) for extr
 - **Job descriptions are sent to Anthropic** — The full text of uploaded job descriptions is sent to the Anthropic API for processing. See [Anthropic's data policy](https://www.anthropic.com/policies) for how API inputs are handled.
 
 ### Export
-- **PDF styling** — The PDF export uses a fixed A4 layout with React PDF rendering. Very long signal names or criteria text may wrap awkwardly.
-- **DOCX formatting** — Uses docx library with borderless tables and color-coded cell backgrounds. Complex formatting may not render identically across all Word processors.
+- **PDF styling** — The PDF export uses a fixed A4 layout. Very long signal names or criteria text may wrap awkwardly.
+- **DOCX formatting** — Uses borderless tables with color-coded cell backgrounds. Complex formatting may not render identically across all Word processors.
 - **No Google Docs integration** — DOCX files can be opened in Google Docs, but there is no direct Google Docs API integration.
-- **Fixed filename format** — Exported files use generic names (rubric.pdf, rubric.docx) rather than role-specific names.
+- **Fixed filename format** — Exported files use generic names (`rubric.pdf`, `rubric.docx`) rather than role-specific names.
 
 ### Performance
 
 #### Inline Pipeline
-- **Timeouts** — Extraction has a 30-second timeout, generation has a 90-second timeout. Complex job descriptions or API latency may occasionally trigger timeouts.
+- **Timeouts** — Extraction has a 30-second timeout, generation has a 90-second timeout. Complex job descriptions or API latency may occasionally trigger these.
 - **Request cancellation** — Users can cancel in-flight requests, but this aborts the entire pipeline and requires starting over.
 - **No retry logic** — Failed requests require manual retry by the user.
-- **120-second server timeout** — The Anthropic client has a 120-second timeout that exceeds the client-side timeout to ensure proper stream completion.
 
 #### Async Pipeline
-- **Processing time** — Background jobs typically complete in 30-60 seconds depending on job description complexity.
-- **Polling overhead** — UI polls every 2 seconds until completion (~15-22 requests per job).
-- **90-second timeout** — Jobs that don't complete within 90 seconds are considered failed.
-- **No real-time updates** — Status updates only show queued/running states, not individual signal progress.
-- **Configuration dependency** — Requires `RUBRIC_PRODUCER_URL` environment variable to be set for the async pipeline to function.
+- **Processing time** — Background jobs typically complete in 30–60 seconds depending on job description complexity.
+- **Polling overhead** — UI polls every 2 seconds until completion (~15–22 requests per job).
+- **90-second client timeout** — Jobs that don't complete within 90 seconds are considered failed on the client.
+- **No real-time signal streaming** — Status updates only reflect queued/running/done states; individual signals are not streamed progressively.
+- **Configuration dependency** — Requires `RUBRIC_PRODUCER_URL` to be set. Returns HTTP 503 if not configured.
+- **404 tolerance** — Polling treats 404 responses as transient for up to 10 seconds after submission before treating them as errors.
 
 ### Cost
 - **API usage** — Each job description processed makes two API calls: one to Claude Haiku 4.5 for extraction and one to Claude Sonnet 4.6 for generation. At current pricing, expect roughly $0.01–0.05 per rubric depending on JD length.

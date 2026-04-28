@@ -28,14 +28,14 @@ Extracts raw text from an uploaded file.
 
 | Status | Reason |
 |--------|--------|
-| 400 | No file provided, invalid file (unsupported type or exceeds 5 MB) |
+| 400 | No file provided, invalid file type, or exceeds 5 MB |
 | 500 | File parsing failure (e.g., corrupt PDF, empty file) |
 
 ---
 
 ## POST /api/extract
 
-Sends raw text to Claude AI to extract a structured job description with hiring signals.
+Sends raw text to Claude (Haiku model) to extract a structured job description with hiring signals.
 
 **Content-Type:** `application/json`
 
@@ -94,7 +94,7 @@ Sends raw text to Claude AI to extract a structured job description with hiring 
 
 ## POST /api/generate
 
-Takes extracted signals and generates a complete weighted interview rubric using Claude AI via Server-Sent Events (SSE).
+Takes extracted signals and streams a complete weighted interview rubric using Claude (Sonnet model) via Server-Sent Events (SSE).
 
 **Content-Type:** `application/json`
 
@@ -108,9 +108,9 @@ Takes extracted signals and generates a complete weighted interview rubric using
 
 **Response (200):**
 
-Returns a Server-Sent Events stream. Each event contains JSON data:
+Returns a Server-Sent Events stream. Each event contains JSON data.
 
-**Signal Event:**
+**Signal Event** — emitted once per signal as it is generated:
 ```json
 {
   "type": "signal",
@@ -133,7 +133,7 @@ Returns a Server-Sent Events stream. Each event contains JSON data:
 }
 ```
 
-**Completion Event:**
+**Completion Event** — emitted once after all signals:
 ```json
 {
   "type": "done",
@@ -165,13 +165,13 @@ Returns a Server-Sent Events stream. Each event contains JSON data:
 | Status | Reason |
 |--------|--------|
 | 400 | Missing required fields: role, level, or signals |
-| 500 | Claude API error or response parsing failure |
+| 500 | Claude API error or stream failure |
 
 ---
 
 ## POST /api/jobs
 
-Submits a job description to the async rubric generation pipeline.
+Proxies a job description submission to the Cloudflare producer Worker for async rubric generation. Requires `RUBRIC_PRODUCER_URL` to be configured.
 
 **Content-Type:** `application/json`
 
@@ -194,15 +194,15 @@ Submits a job description to the async rubric generation pipeline.
 
 | Status | Reason |
 |--------|--------|
-| 400 | Invalid JSON body or missing/empty text field |
-| 502 | Failed to reach rubric service |
-| 503 | Async pipeline not configured (missing RUBRIC_PRODUCER_URL) |
+| 400 | Invalid JSON body or missing/empty `text` field |
+| 502 | Failed to reach producer Worker |
+| 503 | Async pipeline not configured (missing `RUBRIC_PRODUCER_URL`) |
 
 ---
 
 ## GET /api/jobs/:jobId
 
-Polls the status of an async rubric generation job.
+Proxies a status poll to the Cloudflare producer Worker for a previously submitted job. `jobId` must be alphanumeric, hyphens, or underscores.
 
 **Response (200):**
 
@@ -217,7 +217,7 @@ Polls the status of an async rubric generation job.
     "id": "550e8400-e29b-41d4-a716-446655440000",
     "role": "Senior Backend Engineer",
     "level": "senior",
-    "signals": [...],
+    "signals": ["..."],
     "createdAt": "2026-03-21T04:00:00.000Z",
     "version": "1.0.0"
   }
@@ -225,25 +225,28 @@ Polls the status of an async rubric generation job.
 ```
 
 **Job Status Values:**
-- `queued`: Job submitted but not yet started
-- `running`: Pipeline is processing the job
-- `done`: Completed successfully (includes `rubric` field)
-- `failed`: Processing failed (includes `error` field)
+
+| Status | Description |
+|--------|-------------|
+| `queued` | Job submitted, not yet started |
+| `running` | Pipeline is actively processing |
+| `done` | Completed successfully — response includes `rubric` field |
+| `failed` | Processing failed — response includes `error` field |
 
 **Errors:**
 
 | Status | Reason |
 |--------|--------|
-| 400 | Invalid jobId format |
+| 400 | Invalid `jobId` format |
 | 404 | Job not found |
-| 502 | Failed to reach rubric service |
-| 503 | Async pipeline not configured |
+| 502 | Failed to reach producer Worker |
+| 503 | Async pipeline not configured (missing `RUBRIC_PRODUCER_URL`) |
 
 ---
 
 ## POST /api/export
 
-Exports a rubric as a downloadable PDF or DOCX file.
+Exports a rubric as a downloadable PDF or DOCX file. Signals are sorted by weight (descending) in the exported document.
 
 **Content-Type:** `application/json`
 
@@ -257,21 +260,23 @@ Exports a rubric as a downloadable PDF or DOCX file.
 **Response (200):**
 
 Binary file download with appropriate headers:
-- PDF: `Content-Type: application/pdf; Content-Disposition: attachment; filename="rubric.pdf"`
-- DOCX: `Content-Type: application/vnd.openxmlformats-officedocument.wordprocessingml.document; Content-Disposition: attachment; filename="rubric.docx"`
+- PDF: `Content-Type: application/pdf`, `Content-Disposition: attachment; filename="rubric.pdf"`
+- DOCX: `Content-Type: application/vnd.openxmlformats-officedocument.wordprocessingml.document`, `Content-Disposition: attachment; filename="rubric.docx"`
+
+Both formats include: role title, level, signal count, creation date, and for each signal — name, weight, suggested modality, description, exceeds/meets/below criteria, and suggested questions.
 
 **Errors:**
 
 | Status | Reason |
 |--------|--------|
-| 400 | Missing required fields (rubric, format) or invalid format value |
+| 400 | Missing `rubric` or `format`, or `format` is not `"pdf"` or `"docx"` |
 | 500 | Document generation failure |
 
 ---
 
 ## GET /api/version
 
-Returns deployment information.
+Returns deployment metadata. Reads from `NEXT_PUBLIC_COMMIT_SHA` and `NEXT_PUBLIC_DEPLOYED_AT` environment variables; falls back to `"unknown"` if unset.
 
 **Response (200):**
 
