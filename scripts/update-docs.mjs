@@ -138,15 +138,30 @@ async function writeDoc(filename, content) {
   await writeFile(filePath, content, 'utf8');
 }
 
-function buildPrompt(filename, currentDoc, sourceCode) {
-  return `You are a technical writer. Based on the following source code, update the ${filename} documentation.
-Keep it concise and accurate. Output only the markdown content, no explanation.
+function buildSystem(sourceCode) {
+  // Source code is byte-identical across all 4 doc updates per run, so caching it
+  // cuts input-token usage by ~70% and keeps the burst under per-minute rate limits.
+  // See https://platform.claude.com/docs/en/build-with-claude/prompt-caching.
+  return [
+    {
+      type: 'text',
+      text:
+        'You are a technical writer. Update the requested Markdown documentation file based on the source code below. ' +
+        'Keep it concise and accurate. Output only the Markdown content, no explanation.',
+    },
+    {
+      type: 'text',
+      text: `Source code:\n${sourceCode}`,
+      cache_control: { type: 'ephemeral' },
+    },
+  ];
+}
+
+function buildUserMessage(filename, currentDoc) {
+  return `Update the ${filename} documentation.
 
 Current documentation:
-${currentDoc || '(none — create from scratch)'}
-
-Source code:
-${sourceCode}`;
+${currentDoc || '(none — create from scratch)'}`;
 }
 
 // ---------------------------------------------------------------------------
@@ -160,10 +175,13 @@ async function main() {
     process.exit(1);
   }
 
-  const client = new Anthropic({ apiKey });
+  // maxRetries: 4 (vs default 2) gives extra headroom for transient 429s on the
+  // first call, which writes the source-code prompt to cache.
+  const client = new Anthropic({ apiKey, maxRetries: 4 });
 
   console.log('Reading source files…');
   const sourceCode = await readSourceFiles();
+  const system = buildSystem(sourceCode);
 
   const docs = [
     {
@@ -188,15 +206,15 @@ async function main() {
     console.log(`\nUpdating docs/${filename} (${description})…`);
 
     const currentDoc = await readDoc(filename);
-    const prompt = buildPrompt(filename, currentDoc, sourceCode);
 
     let updatedContent = '';
 
     try {
       const stream = await client.messages.stream({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-6',
         max_tokens: 4096,
-        messages: [{ role: 'user', content: prompt }],
+        system,
+        messages: [{ role: 'user', content: buildUserMessage(filename, currentDoc) }],
       });
 
       // Stream progress indicator
@@ -205,6 +223,12 @@ async function main() {
 
       const message = await stream.finalMessage();
       process.stdout.write('\n');
+
+      const u = message.usage;
+      console.log(
+        `  Tokens: input=${u.input_tokens}, cache_read=${u.cache_read_input_tokens ?? 0}, ` +
+          `cache_create=${u.cache_creation_input_tokens ?? 0}, output=${u.output_tokens}`,
+      );
 
       updatedContent = message.content
         .filter((block) => block.type === 'text')
