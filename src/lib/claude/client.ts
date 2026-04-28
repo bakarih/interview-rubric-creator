@@ -29,9 +29,13 @@ export async function generateCompletion(
 ): Promise<string> {
   const claude = getClaudeClient();
 
+  const model = options?.model ?? 'claude-sonnet-4-6';
+
   const response = await claude.messages.create({
-    model: options?.model ?? 'claude-sonnet-4-6',
+    model,
     max_tokens: options?.maxTokens ?? 4096,
+    // effort is only supported on Sonnet 4.6 / Opus tiers; Haiku 4.5 returns 400 if it's set.
+    ...(model === 'claude-sonnet-4-6' && { output_config: { effort: 'medium' as const } }),
     system: systemPrompt,
     messages: [
       {

@@ -32,7 +32,7 @@ async function callClaude(
   apiKey: string,
   systemPrompt: string,
   userMessage: string,
-  options: { model: string; maxTokens: number }
+  options: { model: string; maxTokens: number; effort?: 'low' | 'medium' | 'high' | 'max' }
 ): Promise<string> {
   const response = await fetch(ANTHROPIC_API_URL, {
     method: 'POST',
@@ -44,6 +44,8 @@ async function callClaude(
     body: JSON.stringify({
       model: options.model,
       max_tokens: options.maxTokens,
+      // effort is only supported on Sonnet 4.6 / Opus tiers; Haiku 4.5 returns 400 if it's set.
+      ...(options.effort && { output_config: { effort: options.effort } }),
       system: systemPrompt,
       messages: [{ role: 'user', content: userMessage }],
     }),
@@ -226,7 +228,7 @@ export async function generateRubricSignals(
     apiKey,
     GENERATE_RUBRIC_SYSTEM_PROMPT,
     buildGenerateUserMessage(role, level, signals),
-    { model: GENERATE_MODEL, maxTokens: 8192 }
+    { model: GENERATE_MODEL, maxTokens: 8192, effort: 'medium' }
   );
 
   const cleaned = stripJsonFences(text);
