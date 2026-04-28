@@ -192,17 +192,18 @@ The application uses a stateful client-side architecture:
 - **Dynamic Routing**: `/rubric/[id]` pages load rubrics from localStorage with `React.use()` for params
 - **Progressive Streaming UI**: Shows signals appearing in real-time during generation (inline mode)
 - **Comprehensive Loading States**: Status message cycling with accessibility announcements
+- **Theme System**: Dark/light mode toggle with localStorage persistence using `useSyncExternalStore`
 
 ### Comprehensive Validation Pipeline
 All API inputs are validated with Zod schemas before processing. Claude's JSON responses are stripped of markdown fences and validated. This catches malformed data early and provides clear error messages.
 
 ### Enhanced User Experience
 - **Accessibility**: Skip links, focus management, ARIA labels, screen reader support
-- **Theme System**: Dark/light mode toggle with localStorage persistence using `useSyncExternalStore`
 - **Feedback Integration**: GitHub issue templates for bug reports and feature requests
 - **Progressive Enhancement**: File drag-and-drop with fallback click-to-upload
 - **Error Handling**: Contextual error messages with retry functionality
 - **Timeout Management**: 30-second extraction timeout, 90-second generation timeout with AbortController
+- **Responsive Design**: Mobile-optimized interface with proper touch targets
 
 ## Type System
 

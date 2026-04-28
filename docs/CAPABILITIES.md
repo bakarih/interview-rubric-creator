@@ -26,7 +26,7 @@ From the extracted signals, Claude generates a complete interview rubric where e
 - **Interview questions** — 1–5 tailored behavioral or situational questions per signal
 
 ### Processing Pipelines
-The application supports two processing modes:
+The application supports two processing modes controlled by the `NEXT_PUBLIC_USE_ASYNC_PIPELINE` feature flag:
 
 #### Inline Pipeline (Default)
 - **Real-time streaming** — Progressive display of signals as they're generated via Server-Sent Events (SSE)
@@ -36,8 +36,8 @@ The application supports two processing modes:
 - **120-second server timeout** — Anthropic client timeout exceeds frontend timeout to ensure proper stream completion
 
 #### Async Pipeline (Configurable)
-- **Cloudflare Queues + R2** — Offloads processing to background workers with cloud storage
-- **Polling-based status** — UI polls for job status every 2 seconds until completion
+- **Cloudflare Queues + R2** — Offloads processing to background workers with cloud storage via `RUBRIC_PRODUCER_URL`
+- **Polling-based status** — UI polls `/api/jobs/:jobId` for status every 2 seconds until completion
 - **Scalable architecture** — Handles high-concurrency workloads through distributed processing
 - **Feature flag controlled** — Enabled via `NEXT_PUBLIC_USE_ASYNC_PIPELINE=true`
 - **90-second timeout** — Jobs that don't complete within 90 seconds are considered failed
@@ -138,6 +138,7 @@ The application uses **Claude Haiku 4.5** (`claude-haiku-4-5-20251001`) for extr
 - **Polling overhead** — UI polls every 2 seconds until completion (~15-22 requests per job).
 - **90-second timeout** — Jobs that don't complete within 90 seconds are considered failed.
 - **No real-time updates** — Status updates only show queued/running states, not individual signal progress.
+- **Configuration dependency** — Requires `RUBRIC_PRODUCER_URL` environment variable to be set for the async pipeline to function.
 
 ### Cost
 - **API usage** — Each job description processed makes two API calls: one to Claude Haiku 4.5 for extraction and one to Claude Sonnet 4.6 for generation. At current pricing, expect roughly $0.01–0.05 per rubric depending on JD length.
