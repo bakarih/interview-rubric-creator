@@ -51,6 +51,7 @@ export async function POST(request: NextRequest) {
         const messageStream = claude.messages.stream({
           model: 'claude-sonnet-4-6',
           max_tokens: 8192,
+          output_config: { effort: 'medium' },
           system: GENERATE_RUBRIC_SYSTEM_PROMPT,
           messages: [
             {
