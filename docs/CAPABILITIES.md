@@ -68,11 +68,15 @@ The application supports two processing modes controlled by the `NEXT_PUBLIC_USE
 - **Built-in feedback widget** — Fixed-position feedback button with expandable menu for sharing feedback, reporting bugs, suggesting features, or contributing code
 - **Direct GitHub integration** — Links to repository issue templates for structured feedback with specific templates for each feedback type
 
+### API and Status
+- **Version endpoint** — `/api/version` returns commit SHA and deployment timestamp
+- **Health checking** — Status tracking for async pipeline jobs with detailed error reporting
+
 ---
 
 ## AI Model Capabilities
 
-The application uses **Claude Haiku 4.5** (`claude-haiku-4-5-20251001`) for extraction and **Claude Sonnet 4.6** (`claude-sonnet-4-6`) for generation with a two-step API process and 120-second server timeout.
+The application uses **Claude Haiku 4.5** (`claude-haiku-4-5-20251001`) for extraction and **Claude Sonnet 4.6** (`claude-sonnet-4-6`) for generation with a two-step API process and 120-second server timeout. Sonnet 4.6 uses medium effort output configuration for higher quality generation.
 
 ### What the Model Does Well
 - **Structured output** — Reliably produces valid JSON matching the expected schema with automatic markdown fence stripping

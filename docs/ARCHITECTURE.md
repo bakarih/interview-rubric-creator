@@ -250,16 +250,6 @@ type JobLevel =
 type AsyncJobStatus = 'queued' | 'running' | 'done' | 'failed';
 ```
 
-## Testing Strategy
-
-| Layer | Framework | What's Tested |
-|-------|-----------|---------------|
-| Unit | Jest + ts-jest | Zod schemas, parsers, Claude prompts, client |
-| Integration | Jest | API route handlers with mocked Claude responses |
-| E2E | Playwright | Full user flow: upload → extract → generate → export |
-
-Coverage is enforced at **100%** for statements, branches, functions, and lines.
-
 ## Deployment
 
 The production app runs on **AWS App Runner** (us-east-1) with:
